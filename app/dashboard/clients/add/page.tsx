@@ -663,38 +663,6 @@ export default function AddClientPage() {
             </div>
           )}
 
-          {/* Additional Information */}
-          <div className="mb-6">
-            <div
-              className="relative px-6 py-2 bg-[#FF6B00] text-white font-semibold text-lg flex items-center gap-3 w-fit"
-              style={{
-                clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%)",
-              }}
-            >
-              <FileText size={20} className="text-white" />
-              <span>Additional Information</span>
-            </div>
-            <div className="w-full h-[2px] bg-[#FF6B00] ml-[12px]"></div>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-400 mb-2">
-              Notes
-            </label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleInputChange}
-              rows={4}
-              className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                theme === "dark"
-                  ? "bg-gray-800 border-gray-700 text-white"
-                  : "bg-white border-gray-300 text-gray-900"
-              } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-              placeholder="Any additional notes about this client..."
-            />
-          </div>
-
           {/* Payment Terms */}
           <div className="mb-6">
             <div
@@ -981,6 +949,38 @@ export default function AddClientPage() {
                 <span className="text-sm font-medium text-gray-300">Other</span>
               </label>
             </div>
+          </div>
+
+          {/* Additional Information */}
+          <div className="mb-6">
+            <div
+              className="relative px-6 py-2 bg-[#FF6B00] text-white font-semibold text-lg flex items-center gap-3 w-fit"
+              style={{
+                clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%)",
+              }}
+            >
+              <FileText size={20} className="text-white" />
+              <span>Additional Information</span>
+            </div>
+            <div className="w-full h-[2px] bg-[#FF6B00] ml-[12px]"></div>
+          </div>
+
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-400 mb-2">
+              Notes
+            </label>
+            <textarea
+              name="notes"
+              value={formData.notes}
+              onChange={handleInputChange}
+              rows={4}
+              className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                theme === "dark"
+                  ? "bg-gray-800 border-gray-700 text-white"
+                  : "bg-white border-gray-300 text-gray-900"
+              } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+              placeholder="Any additional notes about this client..."
+            />
           </div>
 
         </div>
