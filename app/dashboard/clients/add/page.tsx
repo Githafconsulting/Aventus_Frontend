@@ -48,8 +48,6 @@ export default function AddClientPage() {
     notes: "",
     is_active: true,
     // Payment Terms
-    po_required: false,
-    po_number: "",
     contractor_pay_frequency: "",
     client_invoice_frequency: "",
     client_payment_terms: "",
@@ -712,37 +710,6 @@ export default function AddClientPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="flex items-center gap-3 cursor-pointer mb-4">
-                <input
-                  type="checkbox"
-                  name="po_required"
-                  checked={formData.po_required}
-                  onChange={(e) => setFormData(prev => ({ ...prev, po_required: e.target.checked }))}
-                  className="w-5 h-5 text-[#FF6B00] rounded focus:ring-[#FF6B00]"
-                />
-                <span className="text-sm font-medium text-gray-300">PO Required</span>
-              </label>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
-                PO Number
-              </label>
-              <input
-                type="text"
-                name="po_number"
-                value={formData.po_number}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
-                  theme === "dark"
-                    ? "bg-gray-800 border-gray-700 text-white"
-                    : "bg-white border-gray-300 text-gray-900"
-                } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                placeholder="PO number"
-              />
-            </div>
-
             <div>
               <label className="block text-sm font-medium text-gray-400 mb-2">
                 Contractor Pay Frequency
