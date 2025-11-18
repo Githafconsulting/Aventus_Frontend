@@ -25,7 +25,7 @@ export default function ContractorsPage() {
   const [loading, setLoading] = useState(true);
 
   const handleDelete = async (contractorId: string, contractorName: string) => {
-    if (!confirm(`Are you sure you want to cancel/delete ${contractorName}? This action cannot be undone.`)) {
+    if (!confirm(`⚠️ CANCEL CONTRACTOR REQUEST\n\nAre you sure you want to cancel the contractor request for "${contractorName}"?\n\nThis will permanently delete all information related to this contractor and cannot be undone.\n\nClick OK to confirm cancellation, or Cancel to keep the contractor.`)) {
       return;
     }
 
@@ -484,38 +484,77 @@ export default function ContractorsPage() {
                           </button>
                         </div>
                       ) : contractor.status === "documents_uploaded" ? (
-                        user?.role === "consultant" ? (
-                          <div className="flex items-center gap-2 justify-center">
-                            <button
-                              onClick={() =>
-                                router.push(
-                                  `/dashboard/contractors/${contractor.id}/select-route`
-                                )
-                              }
-                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2"
-                            >
-                              Select Route
-                              <ArrowRight size={16} />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(contractor.id, contractor.name)}
-                              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
-                            >
-                              Cancel
-                            </button>
-                          </div>
+                        // Check if this is from third-party route or initial upload
+                        contractor.onboarding_route === "third_party" ? (
+                          // Third-party route: Show Fill CDS & CS Form button
+                          user?.role === "consultant" ? (
+                            <div className="flex items-center gap-2 justify-center">
+                              <button
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/contractors/${contractor.id}/cohf`
+                                  )
+                                }
+                                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2"
+                              >
+                                Next: Fill CDS & CS Form
+                                <ArrowRight size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(contractor.id, contractor.name)}
+                                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 justify-center">
+                              <span className="px-3 py-2 bg-purple-100 text-purple-700 btn-parallelogram text-xs font-medium">
+                                Awaiting CDS & CS Form
+                              </span>
+                              <button
+                                onClick={() => handleDelete(contractor.id, contractor.name)}
+                                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )
                         ) : (
-                          <div className="flex items-center gap-2 justify-center">
-                            <span className="px-3 py-2 bg-blue-100 text-blue-700 btn-parallelogram text-xs font-medium">
-                              Awaiting Route Selection
-                            </span>
-                            <button
-                              onClick={() => handleDelete(contractor.id, contractor.name)}
-                              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
-                            >
-                              Cancel
-                            </button>
-                          </div>
+                          // Initial upload route: Show Select Route button
+                          user?.role === "consultant" ? (
+                            <div className="flex items-center gap-2 justify-center">
+                              <button
+                                onClick={() =>
+                                  router.push(
+                                    `/dashboard/contractors/${contractor.id}/select-route`
+                                  )
+                                }
+                                className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2"
+                              >
+                                Select Route
+                                <ArrowRight size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleDelete(contractor.id, contractor.name)}
+                                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2 justify-center">
+                              <span className="px-3 py-2 bg-blue-100 text-blue-700 btn-parallelogram text-xs font-medium">
+                                Awaiting Route Selection
+                              </span>
+                              <button
+                                onClick={() => handleDelete(contractor.id, contractor.name)}
+                                className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          )
                         )
                       ) : contractor.status === "pending_third_party_response" ? (
                         <div className="flex items-center gap-2 justify-center">
