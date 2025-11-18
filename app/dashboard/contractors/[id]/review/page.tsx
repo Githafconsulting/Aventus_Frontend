@@ -252,11 +252,11 @@ export default function ReviewContractorPage() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <div className="w-full px-2 py-4">
         {/* Back Button */}
         <button
           onClick={() => router.push("/dashboard/contractors")}
-          className="flex items-center gap-2 mb-4 text-gray-600 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-2 mb-4 text-gray-600 hover:text-gray-900 transition-colors ml-2"
         >
           <ArrowLeft size={18} />
           Back to Contractors
@@ -293,9 +293,9 @@ export default function ReviewContractorPage() {
         )}
 
         {/* 3-Column Grid Layout */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {/* Column 1 */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             {/* Contact & Personal Information */}
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <SectionHeader title="Contact & Personal Info" icon={User} />
@@ -323,10 +323,7 @@ export default function ReviewContractorPage() {
                 <ListItem icon={Clock} label="Duration" value={contractor.duration} />
               </div>
             </div>
-          </div>
 
-          {/* Column 2 */}
-          <div className="space-y-4">
             {/* Management Company */}
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <SectionHeader title="Management Company" icon={Building2} />
@@ -342,6 +339,19 @@ export default function ReviewContractorPage() {
               </div>
             </div>
 
+            {/* Aventus Deal */}
+            <div className="bg-white rounded-xl p-4 shadow-sm">
+              <SectionHeader title="Aventus Deal" icon={Briefcase} />
+              <div>
+                <ListItem icon={User} label="Consultant" value={contractor.consultant} />
+                <ListItem icon={FileText} label="Any Splits?" value={contractor.any_splits} />
+                <ListItem icon={User} label="Resourcer" value={contractor.resourcer} />
+              </div>
+            </div>
+          </div>
+
+          {/* Column 2 */}
+          <div className="space-y-3">
             {/* Financial Details */}
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <SectionHeader title="Financial Details" icon={CreditCard} />
@@ -414,20 +424,20 @@ export default function ReviewContractorPage() {
                 </div>
               </div>
             )}
+
+            {/* Pay Details */}
+            <div className="bg-white rounded-xl p-4 shadow-sm">
+              <SectionHeader title="Pay Details" icon={Wallet} />
+              <div>
+                <ListItem icon={Building2} label="Umbrella or Direct?" value={contractor.umbrella_or_direct} />
+                <ListItem icon={CreditCard} label="Bank Details" value={contractor.candidate_bank_details} />
+                <ListItem icon={CreditCard} label="IBAN" value={contractor.candidate_iban} />
+              </div>
+            </div>
           </div>
 
           {/* Column 3 */}
-          <div className="space-y-4">
-            {/* Aventus Deal */}
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <SectionHeader title="Aventus Deal" icon={Briefcase} />
-              <div>
-                <ListItem icon={User} label="Consultant" value={contractor.consultant} />
-                <ListItem icon={FileText} label="Any Splits?" value={contractor.any_splits} />
-                <ListItem icon={User} label="Resourcer" value={contractor.resourcer} />
-              </div>
-            </div>
-
+          <div className="space-y-3">
             {/* Invoice Details */}
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <SectionHeader title="Invoice Details" icon={Receipt} />
@@ -455,16 +465,6 @@ export default function ReviewContractorPage() {
                     <p className="text-sm text-gray-900 whitespace-pre-wrap">{contractor.invoice_instructions}</p>
                   </div>
                 )}
-              </div>
-            </div>
-
-            {/* Pay Details */}
-            <div className="bg-white rounded-xl p-4 shadow-sm">
-              <SectionHeader title="Pay Details" icon={Wallet} />
-              <div>
-                <ListItem icon={Building2} label="Umbrella or Direct?" value={contractor.umbrella_or_direct} />
-                <ListItem icon={CreditCard} label="Bank Details" value={contractor.candidate_bank_details} />
-                <ListItem icon={CreditCard} label="IBAN" value={contractor.candidate_iban} />
               </div>
             </div>
 
