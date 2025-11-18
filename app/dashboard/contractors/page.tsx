@@ -110,6 +110,7 @@ export default function ContractorsPage() {
             position: c.role || "Not specified",
             location: c.location || "Not specified",
             status: c.status,
+            onboarding_route: c.onboarding_route,
             joinDate: c.created_at ? new Date(c.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             avatar: `${c.first_name?.[0] || 'C'}${c.surname?.[0] || 'C'}`,
             contractToken: c.contract_token,
