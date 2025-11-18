@@ -55,6 +55,16 @@ export const API_ENDPOINTS = {
   // Admins
   get admins() { return `${getApiUrl()}/api/v1/auth/admins`; },
 
+  // Third Parties
+  get thirdParties() { return `${getApiUrl()}/api/v1/third-parties/`; },
+  thirdPartyById: (id: string) => `${getApiUrl()}/api/v1/third-parties/${id}`,
+
+  // Clients
+  get clients() { return `${getApiUrl()}/api/v1/clients/`; },
+  clientById: (id: string) => `${getApiUrl()}/api/v1/clients/${id}`,
+  clientUploadDocument: (id: string) => `${getApiUrl()}/api/v1/clients/${id}/upload-document`,
+  clientDeleteDocument: (id: string, index: number) => `${getApiUrl()}/api/v1/clients/${id}/documents/${index}`,
+
   // Signature
   get superadminSignature() { return `${getApiUrl()}/api/v1/contractors/superadmin/signature`; },
 };

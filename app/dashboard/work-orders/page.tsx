@@ -1,75 +1,74 @@
-﻿"use client";
+"use client";
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { API_ENDPOINTS } from "@/lib/config";
 import {
   Search,
   Plus,
-  Building2,
-  Mail,
-  Phone,
-  MapPin,
-  CreditCard,
-  Trash2,
-  Edit2,
-  CheckCircle,
-  XCircle,
   FileText,
+  Eye,
+  Edit2,
+  Trash2,
+  Calendar,
+  User,
+  Building2,
+  DollarSign,
+  Clock,
 } from "lucide-react";
 
-interface ThirdParty {
+interface WorkOrder {
   id: string;
-  country: string | null;
-  workflow_config: Record<string, boolean> | null;
-  company_name: string;
-  registered_address: string | null;
-  company_vat_no: string | null;
-  company_reg_no: string | null;
-  contact_person_name: string | null;
-  contact_person_email: string | null;
-  contact_person_phone: string | null;
-  bank_name: string | null;
-  account_number: string | null;
-  iban_number: string | null;
-  swift_code: string | null;
+  work_order_number: string;
+  contractor_id: string;
+  third_party_id: string | null;
+  title: string;
+  description: string | null;
+  location: string | null;
+  start_date: string;
+  end_date: string | null;
+  hourly_rate: number | null;
+  fixed_price: number | null;
+  estimated_hours: number | null;
+  actual_hours: number;
+  status: "draft" | "pending" | "approved" | "in_progress" | "completed" | "cancelled";
   notes: string | null;
-  is_active: boolean;
+  documents: any[];
+  created_by: string;
+  approved_by: string | null;
   created_at: string;
   updated_at: string | null;
 }
 
-export default function ThirdPartiesPage() {
+export default function WorkOrdersPage() {
   const { theme } = useTheme();
   const { user: currentUser } = useAuth();
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("active");
-  const [thirdParties, setThirdParties] = useState<ThirdParty[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<string>("all");
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch third parties on mount
+  // Fetch work orders on mount
   useEffect(() => {
-    fetchThirdParties();
+    fetchWorkOrders();
   }, []);
 
-  const fetchThirdParties = async () => {
+  const fetchWorkOrders = async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("aventus-auth-token");
 
       if (!token) {
         setError("Not authenticated");
-        router.push("/");
         return;
       }
 
       const response = await fetch(
-        `${API_ENDPOINTS.thirdParties}?include_inactive=true`,
+        "http://localhost:8000/api/v1/work-orders",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -77,30 +76,23 @@ export default function ThirdPartiesPage() {
         }
       );
 
-      if (response.status === 401) {
-        localStorage.removeItem("aventus-auth-token");
-        router.push("/");
-        return;
-      }
-
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to fetch third parties");
+        throw new Error("Failed to fetch work orders");
       }
 
       const data = await response.json();
-      setThirdParties(data);
+      setWorkOrders(data);
       setError(null);
     } catch (err) {
-      console.error("Error fetching third parties:", err);
-      setError("Failed to load third parties");
+      console.error("Error fetching work orders:", err);
+      setError("Failed to load work orders");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleDeleteThirdParty = async (id: string, name: string) => {
-    if (!confirm(`Are you sure you want to delete ${name}?`)) {
+  const handleDeleteWorkOrder = async (id: string, workOrderNumber: string) => {
+    if (!confirm(`Are you sure you want to delete work order ${workOrderNumber}?`)) {
       return;
     }
 
@@ -112,7 +104,7 @@ export default function ThirdPartiesPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/third-parties/${id}`, {
+      const response = await fetch(`http://localhost:8000/api/v1/work-orders/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -121,54 +113,58 @@ export default function ThirdPartiesPage() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.detail || "Failed to delete third party");
+        throw new Error(errorData.detail || "Failed to delete work order");
       }
 
-      alert("Third party deleted successfully");
-      fetchThirdParties();
+      alert("Work order deleted successfully");
+      fetchWorkOrders();
     } catch (err: any) {
-      console.error("Error deleting third party:", err);
+      console.error("Error deleting work order:", err);
       alert(`Error: ${err.message}`);
     }
   };
 
-  // Filter third parties
-  const filteredThirdParties = thirdParties.filter((tp) => {
+  // Filter work orders
+  const filteredWorkOrders = workOrders.filter((wo) => {
     const matchesSearch =
-      tp.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (tp.contact_person_name &&
-        tp.contact_person_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (tp.contact_person_email &&
-        tp.contact_person_email.toLowerCase().includes(searchQuery.toLowerCase()));
+      wo.work_order_number.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      wo.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (wo.location && wo.location.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus =
-      selectedStatus === "all" || (tp.is_active ? "active" : "inactive") === selectedStatus;
+      selectedStatus === "all" || wo.status === selectedStatus;
 
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (is_active: boolean) => {
-    if (is_active) {
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/10 text-green-500 flex items-center gap-1 w-fit">
-          <CheckCircle size={12} />
-          Active
-        </span>
-      );
-    } else {
-      return (
-        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-500/10 text-gray-500 flex items-center gap-1 w-fit">
-          <XCircle size={12} />
-          Inactive
-        </span>
-      );
-    }
+  const getStatusBadge = (status: string) => {
+    const statusConfig: Record<string, { color: string; label: string }> = {
+      draft: { color: "gray", label: "Draft" },
+      pending: { color: "yellow", label: "Pending" },
+      approved: { color: "green", label: "Approved" },
+      in_progress: { color: "blue", label: "In Progress" },
+      completed: { color: "purple", label: "Completed" },
+      cancelled: { color: "red", label: "Cancelled" },
+    };
+
+    const config = statusConfig[status] || statusConfig.draft;
+
+    return (
+      <span
+        className={`px-3 py-1 rounded-full text-xs font-semibold bg-${config.color}-500/10 text-${config.color}-500 w-fit`}
+      >
+        {config.label}
+      </span>
+    );
   };
 
   const stats = {
-    total: thirdParties.length,
-    active: thirdParties.filter((tp) => tp.is_active).length,
-    inactive: thirdParties.filter((tp) => !tp.is_active).length,
+    total: workOrders.length,
+    draft: workOrders.filter((wo) => wo.status === "draft").length,
+    pending: workOrders.filter((wo) => wo.status === "pending").length,
+    approved: workOrders.filter((wo) => wo.status === "approved").length,
+    in_progress: workOrders.filter((wo) => wo.status === "in_progress").length,
+    completed: workOrders.filter((wo) => wo.status === "completed").length,
   };
 
   return (
@@ -181,23 +177,23 @@ export default function ThirdPartiesPage() {
               theme === "dark" ? "text-white" : "text-gray-900"
             }`}
           >
-            Third Party Companies
+            Work Orders
           </h1>
           <p className="text-gray-400 mt-2">
-            Manage third party companies and their details
+            Manage work orders for contractors and third parties
           </p>
         </div>
         <button
-          onClick={() => router.push("/dashboard/third-parties/add")}
+          onClick={() => router.push("/dashboard/work-orders/add")}
           className="mt-4 md:mt-0 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center gap-2 w-fit"
         >
           <Plus size={20} />
-          Add Third Party
+          Add Work Order
         </button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-8">
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
@@ -218,8 +214,8 @@ export default function ThirdPartiesPage() {
             theme === "dark" ? "bg-gray-900" : "bg-white"
           } rounded-lg p-4 shadow-sm`}
         >
-          <p className="text-gray-400 text-xs mb-1">Active</p>
-          <p className="text-2xl font-bold text-green-500">{stats.active}</p>
+          <p className="text-gray-400 text-xs mb-1">Draft</p>
+          <p className="text-2xl font-bold text-gray-500">{stats.draft}</p>
         </div>
 
         <div
@@ -227,8 +223,35 @@ export default function ThirdPartiesPage() {
             theme === "dark" ? "bg-gray-900" : "bg-white"
           } rounded-lg p-4 shadow-sm`}
         >
-          <p className="text-gray-400 text-xs mb-1">Inactive</p>
-          <p className="text-2xl font-bold text-gray-500">{stats.inactive}</p>
+          <p className="text-gray-400 text-xs mb-1">Pending</p>
+          <p className="text-2xl font-bold text-yellow-500">{stats.pending}</p>
+        </div>
+
+        <div
+          className={`${
+            theme === "dark" ? "bg-gray-900" : "bg-white"
+          } rounded-lg p-4 shadow-sm`}
+        >
+          <p className="text-gray-400 text-xs mb-1">Approved</p>
+          <p className="text-2xl font-bold text-green-500">{stats.approved}</p>
+        </div>
+
+        <div
+          className={`${
+            theme === "dark" ? "bg-gray-900" : "bg-white"
+          } rounded-lg p-4 shadow-sm`}
+        >
+          <p className="text-gray-400 text-xs mb-1">In Progress</p>
+          <p className="text-2xl font-bold text-blue-500">{stats.in_progress}</p>
+        </div>
+
+        <div
+          className={`${
+            theme === "dark" ? "bg-gray-900" : "bg-white"
+          } rounded-lg p-4 shadow-sm`}
+        >
+          <p className="text-gray-400 text-xs mb-1">Completed</p>
+          <p className="text-2xl font-bold text-purple-500">{stats.completed}</p>
         </div>
       </div>
 
@@ -248,7 +271,7 @@ export default function ThirdPartiesPage() {
               />
               <input
                 type="text"
-                placeholder="Search by company name, contact person or email..."
+                placeholder="Search by work order number, title or location..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-all outline-none ${
@@ -272,8 +295,12 @@ export default function ThirdPartiesPage() {
               } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
             >
               <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
+              <option value="draft">Draft</option>
+              <option value="pending">Pending</option>
+              <option value="approved">Approved</option>
+              <option value="in_progress">In Progress</option>
+              <option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option>
             </select>
           </div>
         </div>
@@ -283,7 +310,7 @@ export default function ThirdPartiesPage() {
       {loading && (
         <div className="text-center py-12">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
-          <p className="text-gray-400 mt-4">Loading third parties...</p>
+          <p className="text-gray-400 mt-4">Loading work orders...</p>
         </div>
       )}
 
@@ -293,7 +320,7 @@ export default function ThirdPartiesPage() {
         </div>
       )}
 
-      {/* Third Parties List */}
+      {/* Work Orders List */}
       {!loading && !error && (
         <div
           className={`${
@@ -305,16 +332,16 @@ export default function ThirdPartiesPage() {
               <thead className={`${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Company
+                    Work Order
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Country & Workflow
+                    Details
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Contact Person
+                    Timeline
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                    Registration
+                    Financial
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
                     Status
@@ -325,18 +352,18 @@ export default function ThirdPartiesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-700">
-                {filteredThirdParties.map((tp) => (
+                {filteredWorkOrders.map((wo) => (
                   <tr
-                    key={tp.id}
+                    key={wo.id}
                     className={`${
                       theme === "dark" ? "hover:bg-gray-800" : "hover:bg-gray-50"
                     } transition-colors`}
                   >
-                    {/* Company */}
+                    {/* Work Order */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
-                          {tp.company_name.substring(0, 2).toUpperCase()}
+                        <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                          <FileText size={20} />
                         </div>
                         <div>
                           <div
@@ -344,98 +371,91 @@ export default function ThirdPartiesPage() {
                               theme === "dark" ? "text-white" : "text-gray-900"
                             }`}
                           >
-                            {tp.company_name}
+                            {wo.work_order_number}
                           </div>
-                          {tp.registered_address && (
-                            <div className="text-xs text-gray-400 flex items-center gap-1 mt-1">
-                              <MapPin size={10} />
-                              {tp.registered_address}
-                            </div>
-                          )}
+                          <div className="text-xs text-gray-400">{wo.title}</div>
                         </div>
                       </div>
                     </td>
 
-                    {/* Country & Workflow */}
+                    {/* Details */}
                     <td className="px-6 py-4">
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-1 rounded text-xs font-semibold bg-blue-500/10 text-blue-400">
-                            {tp.country || "N/A"}
-                          </span>
+                      <div className="text-sm text-gray-400">
+                        {wo.location && (
+                          <div className="flex items-center gap-2 mb-1">
+                            <Building2 size={12} />
+                            <span>{wo.location}</span>
+                          </div>
+                        )}
+                        {wo.description && (
+                          <div className="text-xs mt-1 truncate max-w-[200px]">
+                            {wo.description}
+                          </div>
+                        )}
+                      </div>
+                    </td>
+
+                    {/* Timeline */}
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-400">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Calendar size={12} />
+                          <span>{new Date(wo.start_date).toLocaleDateString()}</span>
                         </div>
-                        {tp.workflow_config && (
-                          <div className="text-xs text-gray-400">
-                            {Object.values(tp.workflow_config).filter(Boolean).length} items enabled
+                        {wo.end_date && (
+                          <div className="text-xs">
+                            To: {new Date(wo.end_date).toLocaleDateString()}
                           </div>
                         )}
                       </div>
                     </td>
 
-                    {/* Contact Person */}
+                    {/* Financial */}
                     <td className="px-6 py-4">
                       <div className="text-sm text-gray-400">
-                        {tp.contact_person_name && (
-                          <div className="font-medium mb-1">{tp.contact_person_name}</div>
-                        )}
-                        {tp.contact_person_email && (
+                        {wo.hourly_rate && (
                           <div className="flex items-center gap-2 mb-1">
-                            <Mail size={12} />
-                            <span className="truncate max-w-[180px]">
-                              {tp.contact_person_email}
-                            </span>
+                            <DollarSign size={12} />
+                            <span>${wo.hourly_rate}/hr</span>
                           </div>
                         )}
-                        {tp.contact_person_phone && (
-                          <div className="flex items-center gap-2">
-                            <Phone size={12} />
-                            <span>{tp.contact_person_phone}</span>
-                          </div>
-                        )}
-                        {!tp.contact_person_name &&
-                          !tp.contact_person_email &&
-                          !tp.contact_person_phone && (
-                            <span className="text-xs text-gray-500">No contact info</span>
-                          )}
-                      </div>
-                    </td>
-
-                    {/* Registration */}
-                    <td className="px-6 py-4">
-                      <div className="text-sm text-gray-400">
-                        {tp.company_reg_no && (
+                        {wo.fixed_price && (
                           <div className="flex items-center gap-2 mb-1">
-                            <FileText size={12} />
-                            <span>Reg: {tp.company_reg_no}</span>
+                            <DollarSign size={12} />
+                            <span>${wo.fixed_price} (fixed)</span>
                           </div>
                         )}
-                        {tp.company_vat_no && (
-                          <div className="flex items-center gap-2">
-                            <FileText size={12} />
-                            <span>VAT: {tp.company_vat_no}</span>
+                        {wo.estimated_hours && (
+                          <div className="flex items-center gap-2 text-xs">
+                            <Clock size={10} />
+                            <span>{wo.estimated_hours}h est.</span>
                           </div>
-                        )}
-                        {!tp.company_reg_no && !tp.company_vat_no && (
-                          <span className="text-xs text-gray-500">No registration info</span>
                         )}
                       </div>
                     </td>
 
                     {/* Status */}
-                    <td className="px-6 py-4">{getStatusBadge(tp.is_active)}</td>
+                    <td className="px-6 py-4">{getStatusBadge(wo.status)}</td>
 
                     {/* Actions */}
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
                         <button
-                          onClick={() => router.push(`/dashboard/third-parties/edit/${tp.id}`)}
+                          onClick={() => router.push(`/dashboard/work-orders/view/${wo.id}`)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-purple-500 transition-all text-sm font-medium"
+                        >
+                          <Eye size={14} />
+                          View
+                        </button>
+                        <button
+                          onClick={() => router.push(`/dashboard/work-orders/edit/${wo.id}`)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-all text-sm font-medium"
                         >
                           <Edit2 size={14} />
                           Edit
                         </button>
                         <button
-                          onClick={() => handleDeleteThirdParty(tp.id, tp.company_name)}
+                          onClick={() => handleDeleteWorkOrder(wo.id, wo.work_order_number)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-all text-sm font-medium"
                         >
                           <Trash2 size={14} />
@@ -451,15 +471,15 @@ export default function ThirdPartiesPage() {
         </div>
       )}
 
-      {!loading && !error && filteredThirdParties.length === 0 && (
+      {!loading && !error && filteredWorkOrders.length === 0 && (
         <div className="text-center py-12">
-          <Building2 size={48} className="mx-auto text-gray-400 mb-4" />
+          <FileText size={48} className="mx-auto text-gray-400 mb-4" />
           <h3
             className={`text-lg font-semibold mb-2 ${
               theme === "dark" ? "text-white" : "text-gray-900"
             }`}
           >
-            No Third Parties Found
+            No Work Orders Found
           </h3>
           <p className="text-gray-400">
             Try adjusting your search or filter criteria

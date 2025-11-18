@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
@@ -448,9 +448,8 @@ export default function ProjectsPage() {
                 const isExpanded = expandedProject === project.id;
 
                 return (
-                  <>
+                  <React.Fragment key={project.id}>
                     <tr
-                      key={project.id}
                       className={`border-b ${
                         theme === "dark" ? "border-gray-800" : "border-gray-200"
                       } ${
@@ -591,7 +590,6 @@ export default function ProjectsPage() {
                     {/* Expanded Details Row */}
                     {isExpanded && (
                       <tr
-                        key={`${project.id}-details`}
                         className={`border-b ${
                           theme === "dark" ? "border-gray-800" : "border-gray-200"
                         }`}
@@ -687,7 +685,7 @@ export default function ProjectsPage() {
                         </td>
                       </tr>
                     )}
-                  </>
+                  </React.Fragment>
                 );
               })}
             </tbody>

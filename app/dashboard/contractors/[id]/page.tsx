@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
+import CostOfHireModal from "@/components/CostOfHireModal";
 import { useTheme } from "@/contexts/ThemeContext";
 import {
   ArrowLeft,
@@ -54,6 +55,13 @@ interface Contractor {
   activated_date: string | null;
   documents_uploaded_date: string | null;
   cds_form_data: any;
+  recruitment_cost?: string;
+  onboarding_cost?: string;
+  equipment_cost?: string;
+  administrative_cost?: string;
+  relocation_cost?: string;
+  total_cost_of_hire?: string;
+  cost_of_hire_notes?: string;
 }
 
 interface Document {
@@ -74,6 +82,7 @@ export default function ContractorDetailPage() {
   const [loading, setLoading] = useState(true);
   const [documentsLoading, setDocumentsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showCostOfHireModal, setShowCostOfHireModal] = useState(false);
 
   useEffect(() => {
     if (!contractorId) return;
@@ -448,6 +457,13 @@ export default function ContractorDetailPage() {
                 Activate Contractor
               </button>
             )}
+            <button
+              onClick={() => setShowCostOfHireModal(true)}
+              className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center gap-2"
+            >
+              <DollarSign size={18} />
+              Manage Cost of Hire
+            </button>
           </div>
         </div>
       </div>
@@ -529,6 +545,83 @@ export default function ContractorDetailPage() {
         </div>
       </div>
 
+      {/* Cost of Hire Section - Full Width */}
+      {(contractor.recruitment_cost || contractor.onboarding_cost || contractor.equipment_cost ||
+        contractor.administrative_cost || contractor.relocation_cost || contractor.total_cost_of_hire) && (
+        <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} rounded-xl p-6 shadow-sm mb-6`}>
+          <SectionHeader title="Cost of Hire" icon={DollarSign} />
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {contractor.recruitment_cost && (
+              <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-600/5 border border-blue-500/20">
+                <p className="text-xs font-semibold text-blue-400 uppercase mb-2">Recruitment Cost</p>
+                <p className="text-2xl font-bold text-blue-500">
+                  {contractor.currency || "AED"} {parseFloat(contractor.recruitment_cost).toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Advertising, recruiter fees</p>
+              </div>
+            )}
+
+            {contractor.onboarding_cost && (
+              <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20">
+                <p className="text-xs font-semibold text-green-400 uppercase mb-2">Onboarding Cost</p>
+                <p className="text-2xl font-bold text-green-500">
+                  {contractor.currency || "AED"} {parseFloat(contractor.onboarding_cost).toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Training, orientation</p>
+              </div>
+            )}
+
+            {contractor.equipment_cost && (
+              <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-600/5 border border-purple-500/20">
+                <p className="text-xs font-semibold text-purple-400 uppercase mb-2">Equipment Cost</p>
+                <p className="text-2xl font-bold text-purple-500">
+                  {contractor.currency || "AED"} {parseFloat(contractor.equipment_cost).toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Laptop, phone, tools</p>
+              </div>
+            )}
+
+            {contractor.administrative_cost && (
+              <div className="p-4 rounded-lg bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20">
+                <p className="text-xs font-semibold text-yellow-400 uppercase mb-2">Administrative Cost</p>
+                <p className="text-2xl font-bold text-yellow-500">
+                  {contractor.currency || "AED"} {parseFloat(contractor.administrative_cost).toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Background checks, legal</p>
+              </div>
+            )}
+
+            {contractor.relocation_cost && (
+              <div className="p-4 rounded-lg bg-gradient-to-br from-cyan-500/10 to-cyan-600/5 border border-cyan-500/20">
+                <p className="text-xs font-semibold text-cyan-400 uppercase mb-2">Relocation Cost</p>
+                <p className="text-2xl font-bold text-cyan-500">
+                  {contractor.currency || "AED"} {parseFloat(contractor.relocation_cost).toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-500 mt-1">Moving, housing, flights</p>
+              </div>
+            )}
+
+            {contractor.total_cost_of_hire && (
+              <div className="p-4 rounded-lg bg-gradient-to-br from-[#FF6B00]/20 to-[#FF8533]/10 border-2 border-[#FF6B00]">
+                <p className="text-xs font-semibold text-[#FF6B00] uppercase mb-2">Total Cost of Hire</p>
+                <p className="text-3xl font-bold text-[#FF6B00]">
+                  {contractor.currency || "AED"} {parseFloat(contractor.total_cost_of_hire).toFixed(2)}
+                </p>
+                <p className="text-xs text-gray-400 mt-1">Sum of all hiring costs</p>
+              </div>
+            )}
+          </div>
+
+          {contractor.cost_of_hire_notes && (
+            <div className="mt-6 p-4 rounded-lg bg-gray-800/50 border border-gray-700">
+              <p className="text-xs font-semibold text-gray-400 uppercase mb-2">Additional Notes</p>
+              <p className="text-sm text-gray-300 whitespace-pre-wrap">{contractor.cost_of_hire_notes}</p>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Documents Section - Full Width */}
       <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} rounded-xl p-6 shadow-sm`}>
         <SectionHeader title="Uploaded Documents" icon={FileText} />
@@ -555,6 +648,15 @@ export default function ContractorDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Cost of Hire Modal */}
+      <CostOfHireModal
+        isOpen={showCostOfHireModal}
+        onClose={() => setShowCostOfHireModal(false)}
+        contractorId={contractor.id}
+        initialData={contractor}
+        onSave={() => window.location.reload()}
+      />
     </DashboardLayout>
   );
 }

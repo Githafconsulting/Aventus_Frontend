@@ -73,42 +73,39 @@ export default function ReviewContractorPage() {
   };
 
   const handleApprove = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to approve this contractor? A contract email will be sent."
-      )
-    ) {
-      return;
-    }
-
+    console.log("Approve button clicked - handleApprove called");
     setSubmitting(true);
     setError("");
 
     try {
       const token = localStorage.getItem("aventus-auth-token");
-      const response = await fetch(
-        `${API_ENDPOINTS.contractors}/${contractorId}/approve`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            approved: true,
-            notes: "",
-          }),
-        }
-      );
+      const url = `${API_ENDPOINTS.contractors}/${contractorId}/approve`;
+      console.log("Approving contractor at URL:", url);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          approved: true,
+          notes: "",
+        }),
+      });
+
+      console.log("Response status:", response.status);
 
       if (!response.ok) {
         const errorData = await response.json();
+        console.error("Approval failed:", errorData);
         throw new Error(errorData.detail || "Failed to approve contractor");
       }
 
       alert("Contractor approved successfully! Contract email sent.");
       router.push("/dashboard/contractors");
     } catch (err: any) {
+      console.error("Error approving contractor:", err);
       setError(err.message);
     } finally {
       setSubmitting(false);
@@ -548,7 +545,7 @@ export default function ReviewContractorPage() {
                 ) : (
                   <>
                     <CheckCircle size={18} />
-                    Approve & Send Contract
+                    Approve
                   </>
                 )}
               </button>

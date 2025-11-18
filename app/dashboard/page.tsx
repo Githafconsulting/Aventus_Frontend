@@ -83,7 +83,7 @@ export default function Dashboard() {
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Admins */}
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 shadow-lg text-white">
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 stats-parallelogram p-6 shadow-lg text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm">System Admins</p>
@@ -97,7 +97,7 @@ export default function Dashboard() {
         </div>
 
         {/* Total Clients */}
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 shadow-lg text-white">
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 stats-parallelogram p-6 shadow-lg text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm">Total Clients</p>
@@ -111,7 +111,7 @@ export default function Dashboard() {
         </div>
 
         {/* Total Projects */}
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 shadow-lg text-white">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 stats-parallelogram p-6 shadow-lg text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm">Active Projects</p>
@@ -125,7 +125,7 @@ export default function Dashboard() {
         </div>
 
         {/* Total Contractors */}
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-6 shadow-lg text-white">
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 stats-parallelogram p-6 shadow-lg text-white">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-orange-100 text-sm">Total Contractors</p>
@@ -510,33 +510,54 @@ export default function Dashboard() {
   const ConsultantDashboard = () => {
     const [contractors, setContractors] = React.useState<any[]>([]);
     const [allContractors, setAllContractors] = React.useState<any[]>([]);
+    const [quoteSheets, setQuoteSheets] = React.useState<any[]>([]);
+    const [proposals, setProposals] = React.useState<any[]>([]);
     const [loading, setLoading] = React.useState(true);
 
     React.useEffect(() => {
-      const loadContractors = async () => {
+      const loadData = async () => {
         try {
           const token = localStorage.getItem("aventus-auth-token");
           if (!token) return;
 
-          const response = await fetch(API_ENDPOINTS.contractors, {
+          // Fetch contractors
+          const contractorsResponse = await fetch(API_ENDPOINTS.contractors, {
             headers: { "Authorization": `Bearer ${token}` },
           });
 
-          if (response.ok) {
-            const data = await response.json();
-            // Store all contractors for stats
+          if (contractorsResponse.ok) {
+            const data = await contractorsResponse.json();
             setAllContractors(data);
-            // Get only the latest 4 contractors for display
             setContractors(data.slice(0, 4));
           }
+
+          // Fetch quote sheets
+          const quoteSheetsResponse = await fetch("http://localhost:8000/api/v1/quote-sheets", {
+            headers: { "Authorization": `Bearer ${token}` },
+          });
+
+          if (quoteSheetsResponse.ok) {
+            const data = await quoteSheetsResponse.json();
+            setQuoteSheets(data);
+          }
+
+          // Fetch proposals
+          const proposalsResponse = await fetch("http://localhost:8000/api/v1/proposals", {
+            headers: { "Authorization": `Bearer ${token}` },
+          });
+
+          if (proposalsResponse.ok) {
+            const data = await proposalsResponse.json();
+            setProposals(data);
+          }
         } catch (error) {
-          console.error("Error loading contractors:", error);
+          console.error("Error loading data:", error);
         } finally {
           setLoading(false);
         }
       };
 
-      loadContractors();
+      loadData();
     }, []);
 
     return (
@@ -553,15 +574,33 @@ export default function Dashboard() {
 
       {/* Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {/* Pending Documents */}
-        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-6 shadow-lg text-white">
+        {/* Contractors */}
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 stats-parallelogram p-6 shadow-lg text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-yellow-100 text-sm">Pending Documents</p>
+              <p className="text-orange-100 text-sm">My Contractors</p>
               <p className="text-3xl font-bold mt-2">
-                {loading ? "..." : allContractors.filter(c => c.status === "PENDING_DOCUMENTS" || c.status === "pending_documents").length}
+                {loading ? "..." : allContractors.length}
               </p>
-              <p className="text-yellow-100 text-sm mt-2">Awaiting upload</p>
+              <p className="text-orange-100 text-sm mt-2">Total assigned</p>
+            </div>
+            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
+              <Users size={24} />
+            </div>
+          </div>
+        </div>
+
+        {/* Quote Sheets */}
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 stats-parallelogram p-6 shadow-lg text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm">Quote Sheets</p>
+              <p className="text-3xl font-bold mt-2">
+                {loading ? "..." : quoteSheets.length}
+              </p>
+              <p className="text-blue-100 text-sm mt-2">
+                {quoteSheets.filter(q => q.status === "pending").length} pending
+              </p>
             </div>
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
               <FileText size={24} />
@@ -569,50 +608,36 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Documents Uploaded */}
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 shadow-lg text-white">
+        {/* Proposals */}
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 stats-parallelogram p-6 shadow-lg text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm">Documents Uploaded</p>
+              <p className="text-purple-100 text-sm">Proposals</p>
               <p className="text-3xl font-bold mt-2">
-                {loading ? "..." : allContractors.filter(c => c.status === "DOCUMENTS_UPLOADED" || c.status === "documents_uploaded").length}
+                {loading ? "..." : proposals.length}
               </p>
-              <p className="text-blue-100 text-sm mt-2">Need CDS form</p>
+              <p className="text-purple-100 text-sm mt-2">
+                {proposals.filter(p => p.status === "sent").length} sent
+              </p>
             </div>
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-              <CheckCircle size={24} />
-            </div>
-          </div>
-        </div>
-
-        {/* Pending Review */}
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-6 shadow-lg text-white">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-purple-100 text-sm">Pending Review</p>
-              <p className="text-3xl font-bold mt-2">
-                {loading ? "..." : allContractors.filter(c => c.status === "PENDING_REVIEW" || c.status === "pending_review").length}
-              </p>
-              <p className="text-purple-100 text-sm mt-2">With admin</p>
-            </div>
-            <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-              <AlertCircle size={24} />
+              <Briefcase size={24} />
             </div>
           </div>
         </div>
 
         {/* Active Contractors */}
-        <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 shadow-lg text-white">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 stats-parallelogram p-6 shadow-lg text-white">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm">Active Contractors</p>
+              <p className="text-green-100 text-sm">Active</p>
               <p className="text-3xl font-bold mt-2">
                 {loading ? "..." : allContractors.filter(c => c.status === "ACTIVE" || c.status === "active" || c.status === "SIGNED" || c.status === "signed").length}
               </p>
-              <p className="text-green-100 text-sm mt-2">Working</p>
+              <p className="text-green-100 text-sm mt-2">Working now</p>
             </div>
             <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center">
-              <Users size={24} />
+              <CheckCircle size={24} />
             </div>
           </div>
         </div>
@@ -708,6 +733,24 @@ export default function Dashboard() {
                 className="w-full bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 px-4 rounded-lg transition-all block text-center"
               >
                 Add New Contractor
+              </Link>
+              <Link
+                href="/dashboard/quote-sheets"
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-medium py-3 px-4 rounded-lg transition-all block text-center"
+              >
+                Request Quote Sheet
+              </Link>
+              <Link
+                href="/dashboard/proposals"
+                className="w-full bg-purple-500 hover:bg-purple-600 text-white font-medium py-3 px-4 rounded-lg transition-all block text-center"
+              >
+                Create Proposal
+              </Link>
+              <Link
+                href="/dashboard/work-orders"
+                className="w-full bg-green-500 hover:bg-green-600 text-white font-medium py-3 px-4 rounded-lg transition-all block text-center"
+              >
+                Create Work Order
               </Link>
               <Link
                 href="/dashboard/contractors"

@@ -23,6 +23,8 @@ import {
   UserCog,
   Bot,
   Briefcase,
+  ClipboardList,
+  Send,
 } from "lucide-react";
 
 // Super Admin menu items (Full System Control)
@@ -51,6 +53,16 @@ const superAdminMenuItems = [
     title: "Third Parties",
     icon: Building2,
     href: "/dashboard/third-parties",
+  },
+  {
+    title: "Templates",
+    icon: FileText,
+    href: "/dashboard/templates",
+  },
+  {
+    title: "Work Orders",
+    icon: Briefcase,
+    href: "/dashboard/work-orders",
   },
   {
     title: "Timesheets",
@@ -105,6 +117,16 @@ const adminMenuItems = [
     title: "Third Parties",
     icon: Building2,
     href: "/dashboard/third-parties",
+  },
+  {
+    title: "Templates",
+    icon: FileText,
+    href: "/dashboard/templates",
+  },
+  {
+    title: "Work Orders",
+    icon: Briefcase,
+    href: "/dashboard/work-orders",
   },
   {
     title: "Timesheets",
@@ -199,6 +221,31 @@ const consultantMenuItems = [
     href: "/dashboard/contractors",
   },
   {
+    title: "Quote Sheets",
+    icon: ClipboardList,
+    href: "/dashboard/quote-sheets",
+  },
+  {
+    title: "Proposals",
+    icon: Send,
+    href: "/dashboard/proposals",
+  },
+  {
+    title: "Work Orders",
+    icon: Briefcase,
+    href: "/dashboard/work-orders",
+  },
+  {
+    title: "Clients",
+    icon: Building,
+    href: "/dashboard/clients",
+  },
+  {
+    title: "Third Parties",
+    icon: Building2,
+    href: "/dashboard/third-parties",
+  },
+  {
     title: "Settings",
     icon: Settings,
     href: "/dashboard/settings",
@@ -228,7 +275,7 @@ export default function Sidebar() {
       } bg-white border-r border-gray-200 h-screen flex flex-col transition-all duration-300 ease-in-out`}
     >
       {/* Logo Section */}
-      <div className="p-6 border-b border-gray-200 flex items-center justify-center">
+      <div className="p-6 border-b border-gray-200 flex items-center justify-center relative">
         {!isCollapsed && (
           <Link href="/dashboard" className="flex items-center justify-center">
             <Image
@@ -251,6 +298,8 @@ export default function Sidebar() {
             />
           </Link>
         )}
+        {/* Decorative Line */}
+        <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FF6B00] to-transparent"></div>
       </div>
 
       {/* Toggle Button */}
@@ -268,16 +317,16 @@ export default function Sidebar() {
       {/* Navigation Menu */}
       <nav className="flex-1 p-4 overflow-y-auto">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
+          {menuItems.map((item, index) => {
             const isActive = pathname === item.href;
             const Icon = item.icon;
             return (
               <li key={item.href}>
                 <Link
                   href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
+                  className={`flex items-center gap-3 px-4 py-3 btn-parallelogram transition-all ${
                     isActive
-                      ? "bg-[#FF6B00] text-white"
+                      ? "bg-[#FF6B00] text-white shadow-md"
                       : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
                   }`}
                   title={isCollapsed ? item.title : ""}
@@ -294,10 +343,12 @@ export default function Sidebar() {
       </nav>
 
       {/* Footer Section */}
-      <div className="p-4 border-t border-gray-200">
+      <div className="p-4 border-t border-gray-200 relative">
+        {/* Decorative Line */}
+        <div className="absolute top-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FF6B00] to-transparent"></div>
         <button
           onClick={logout}
-          className="flex items-center gap-3 px-4 py-3 rounded-lg transition-all w-full text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+          className="flex items-center gap-3 px-4 py-3 btn-parallelogram transition-all w-full text-gray-600 hover:text-white hover:bg-red-500"
           title={isCollapsed ? "Logout" : ""}
         >
           <LogOut size={20} className="flex-shrink-0" />

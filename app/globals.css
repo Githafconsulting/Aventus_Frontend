@@ -29,3 +29,42 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   @apply bg-gray-600;
 }
+
+/* Parallelogram/Skewed Shapes */
+@layer components {
+  /* Button Parallelogram - Small skew */
+  .btn-parallelogram {
+    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+    position: relative;
+  }
+
+  /* Card/Container Parallelogram - Medium skew */
+  .card-parallelogram {
+    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
+    position: relative;
+  }
+
+  /* Large Container Parallelogram */
+  .container-parallelogram {
+    clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
+    position: relative;
+  }
+
+  /* Header Parallelogram - Used for section headers */
+  .header-parallelogram {
+    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%);
+    position: relative;
+  }
+
+  /* Input Parallelogram */
+  .input-parallelogram {
+    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
+    position: relative;
+  }
+
+  /* Stats Card Parallelogram */
+  .stats-parallelogram {
+    clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
+    position: relative;
+  }
+}

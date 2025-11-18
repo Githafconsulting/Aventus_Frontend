@@ -21,18 +21,40 @@ export default function DocumentUploadPage() {
   const [uploading, setUploading] = useState(false);
   const [success, setSuccess] = useState(false);
 
+  const [formData, setFormData] = useState({
+    first_name: "",
+    surname: "",
+    email: "",
+    gender: "",
+    dob: "",
+    nationality: "",
+    marital_status: "",
+    number_of_children: "",
+    phone: "",
+    home_address: "",
+    address_line2: "",
+    address_line3: "",
+    address_line4: "",
+    candidate_bank_details: "",
+    candidate_iban: "",
+  });
+
   const [documents, setDocuments] = useState<{
     passport_document: File | null;
     photo_document: File | null;
     visa_page_document: File | null;
-    emirates_id_document: File | null;
+    id_front_document: File | null;
+    id_back_document: File | null;
     degree_document: File | null;
+    emirates_id_document: File | null;
   }>({
     passport_document: null,
     photo_document: null,
     visa_page_document: null,
-    emirates_id_document: null,
+    id_front_document: null,
+    id_back_document: null,
     degree_document: null,
+    emirates_id_document: null,
   });
 
   useEffect(() => {
@@ -51,11 +73,35 @@ export default function DocumentUploadPage() {
 
       const data = await response.json();
       setContractor(data);
+
+      // Pre-fill form data if available
+      setFormData({
+        first_name: data.first_name || "",
+        surname: data.surname || "",
+        email: data.email || "",
+        gender: data.gender || "",
+        dob: data.dob || "",
+        nationality: data.nationality || "",
+        marital_status: data.marital_status || "",
+        number_of_children: data.number_of_children || "",
+        phone: data.phone || "",
+        home_address: data.home_address || "",
+        address_line2: data.address_line2 || "",
+        address_line3: data.address_line3 || "",
+        address_line4: data.address_line4 || "",
+        candidate_bank_details: data.candidate_bank_details || "",
+        candidate_iban: data.candidate_iban || "",
+      });
     } catch (err: any) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleFileChange = (
@@ -75,31 +121,57 @@ export default function DocumentUploadPage() {
     setError("");
 
     try {
-      // Create FormData to send files
-      const formData = new FormData();
+      // Create FormData to send both form fields and files
+      const submitData = new FormData();
 
-      // Append all files
+      // Append personal information fields
+      submitData.append("first_name", formData.first_name);
+      submitData.append("surname", formData.surname);
+      submitData.append("email", formData.email);
+      submitData.append("gender", formData.gender);
+      submitData.append("dob", formData.dob);
+      submitData.append("nationality", formData.nationality);
+      submitData.append("phone", formData.phone);
+      submitData.append("home_address", formData.home_address);
+
+      // Append optional fields
+      if (formData.marital_status) submitData.append("marital_status", formData.marital_status);
+      if (formData.number_of_children) submitData.append("number_of_children", formData.number_of_children);
+      if (formData.address_line2) submitData.append("address_line2", formData.address_line2);
+      if (formData.address_line3) submitData.append("address_line3", formData.address_line3);
+      if (formData.address_line4) submitData.append("address_line4", formData.address_line4);
+      if (formData.candidate_bank_details) submitData.append("candidate_bank_details", formData.candidate_bank_details);
+      if (formData.candidate_iban) submitData.append("candidate_iban", formData.candidate_iban);
+
+      // Append all required files
       if (documents.passport_document) {
-        formData.append("passport_document", documents.passport_document);
+        submitData.append("passport_document", documents.passport_document);
       }
       if (documents.photo_document) {
-        formData.append("photo_document", documents.photo_document);
+        submitData.append("photo_document", documents.photo_document);
       }
       if (documents.visa_page_document) {
-        formData.append("visa_page_document", documents.visa_page_document);
+        submitData.append("visa_page_document", documents.visa_page_document);
       }
-      if (documents.emirates_id_document) {
-        formData.append("emirates_id_document", documents.emirates_id_document);
+      if (documents.id_front_document) {
+        submitData.append("id_front_document", documents.id_front_document);
+      }
+      if (documents.id_back_document) {
+        submitData.append("id_back_document", documents.id_back_document);
       }
       if (documents.degree_document) {
-        formData.append("degree_document", documents.degree_document);
+        submitData.append("degree_document", documents.degree_document);
+      }
+      // Emirates ID is optional
+      if (documents.emirates_id_document) {
+        submitData.append("emirates_id_document", documents.emirates_id_document);
       }
 
       const response = await fetch(
         API_ENDPOINTS.uploadDocuments(token),
         {
           method: "POST",
-          body: formData, // Send FormData (no Content-Type header needed, browser sets it automatically)
+          body: submitData, // Send FormData (no Content-Type header needed, browser sets it automatically)
         }
       );
 
@@ -151,10 +223,10 @@ export default function DocumentUploadPage() {
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">
-            Documents Uploaded Successfully!
+            Information Submitted Successfully!
           </h1>
           <p className="text-gray-600 mb-4">
-            Thank you, {contractor?.first_name}! Your documents have been
+            Thank you, {contractor?.first_name}! Your information and documents have been
             received. Our team will review them and get back to you soon.
           </p>
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-6">
@@ -188,31 +260,275 @@ export default function DocumentUploadPage() {
             Welcome, {contractor?.first_name} {contractor?.surname}!
           </h2>
           <p className="text-gray-600">
-            Please upload the following documents to continue your onboarding
-            process. All documents should be clear, readable, and in PDF, JPG,
-            or PNG format.
+            Please complete your personal information and upload the required
+            documents to continue your onboarding process.
           </p>
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-sm p-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-6">
-            Required Documents
-          </h3>
-
+        <form onSubmit={handleSubmit} className="space-y-6">
           {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-red-600 text-sm">{error}</p>
             </div>
           )}
 
+          {/* Personal Information Section */}
+          <div className="bg-white rounded-lg shadow-sm p-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Personal Information
+            </h3>
+
+            <div className="space-y-6">
+              {/* Name Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    First Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="first_name"
+                    value={formData.first_name}
+                    onChange={handleInputChange}
+                    required
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Last Name <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="surname"
+                    value={formData.surname}
+                    onChange={handleInputChange}
+                    required
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+              </div>
+
+              {/* Email and Phone */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    required
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Phone <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    required
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+              </div>
+
+              {/* Gender, DOB, Nationality */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Gender <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleInputChange}
+                    required
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date of Birth <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="dob"
+                    value={formData.dob}
+                    onChange={handleInputChange}
+                    required
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nationality <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="nationality"
+                    value={formData.nationality}
+                    onChange={handleInputChange}
+                    required
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+              </div>
+
+              {/* Marital Status and Number of Children */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Marital Status
+                  </label>
+                  <select
+                    name="marital_status"
+                    value={formData.marital_status}
+                    onChange={handleInputChange}
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  >
+                    <option value="">Select Status</option>
+                    <option value="Single">Single</option>
+                    <option value="Married">Married</option>
+                    <option value="Divorced">Divorced</option>
+                    <option value="Widowed">Widowed</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Number of Children
+                  </label>
+                  <input
+                    type="number"
+                    name="number_of_children"
+                    value={formData.number_of_children}
+                    onChange={handleInputChange}
+                    min="0"
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+              </div>
+
+              {/* Address Fields */}
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address Line 1 <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="home_address"
+                    value={formData.home_address}
+                    onChange={handleInputChange}
+                    required
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Address Line 2
+                  </label>
+                  <input
+                    type="text"
+                    name="address_line2"
+                    value={formData.address_line2}
+                    onChange={handleInputChange}
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address Line 3
+                    </label>
+                    <input
+                      type="text"
+                      name="address_line3"
+                      value={formData.address_line3}
+                      onChange={handleInputChange}
+                      className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Address Line 4
+                    </label>
+                    <input
+                      type="text"
+                      name="address_line4"
+                      value={formData.address_line4}
+                      onChange={handleInputChange}
+                      className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank Account Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Bank Account Number
+                  </label>
+                  <input
+                    type="text"
+                    name="candidate_bank_details"
+                    value={formData.candidate_bank_details}
+                    onChange={handleInputChange}
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    IBAN
+                  </label>
+                  <input
+                    type="text"
+                    name="candidate_iban"
+                    value={formData.candidate_iban}
+                    onChange={handleInputChange}
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Documents Section */}
+          <div className="bg-white rounded-lg shadow-sm p-8">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">
+              Required Documents
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              All documents should be clear, readable, and in PDF, JPG, or PNG format.
+            </p>
+
           <div className="space-y-6">
-            {/* Passport */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Passport (Photo Page) <span className="text-red-500">*</span>
-              </label>
-              <div className="relative">
+              {/* Passport */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Passport <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="file"
                   accept=".pdf,.jpg,.jpeg,.png"
@@ -226,113 +542,161 @@ export default function DocumentUploadPage() {
                     hover:file:bg-[#FF6B00]/90
                     file:cursor-pointer cursor-pointer"
                 />
+                {documents.passport_document && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle size={16} /> {documents.passport_document.name}
+                  </p>
+                )}
               </div>
-              {documents.passport_document && (
-                <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                  <CheckCircle size={16} /> File selected
-                </p>
-              )}
-            </div>
 
-            {/* Photo */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Recent Photo (Passport Size){" "}
-                <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="file"
-                accept=".jpg,.jpeg,.png"
-                onChange={(e) => handleFileChange(e, "photo_document")}
-                required
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-[#FF6B00] file:text-white
-                  hover:file:bg-[#FF6B00]/90
-                  file:cursor-pointer cursor-pointer"
-              />
-              {documents.photo_document && (
-                <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                  <CheckCircle size={16} /> File selected
-                </p>
-              )}
-            </div>
+              {/* ID Front */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ID Front <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange(e, "id_front_document")}
+                  required
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:bg-[#FF6B00] file:text-white
+                    hover:file:bg-[#FF6B00]/90
+                    file:cursor-pointer cursor-pointer"
+                />
+                {documents.id_front_document && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle size={16} /> {documents.id_front_document.name}
+                  </p>
+                )}
+              </div>
 
-            {/* Visa Page */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Visa Page <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => handleFileChange(e, "visa_page_document")}
-                required
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-[#FF6B00] file:text-white
-                  hover:file:bg-[#FF6B00]/90
-                  file:cursor-pointer cursor-pointer"
-              />
-              {documents.visa_page_document && (
-                <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                  <CheckCircle size={16} /> File selected
-                </p>
-              )}
-            </div>
+              {/* ID Back */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  ID Back <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange(e, "id_back_document")}
+                  required
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:bg-[#FF6B00] file:text-white
+                    hover:file:bg-[#FF6B00]/90
+                    file:cursor-pointer cursor-pointer"
+                />
+                {documents.id_back_document && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle size={16} /> {documents.id_back_document.name}
+                  </p>
+                )}
+              </div>
 
-            {/* Emirates ID / Karma */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Emirates ID or Karma <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => handleFileChange(e, "emirates_id_document")}
-                required
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-[#FF6B00] file:text-white
-                  hover:file:bg-[#FF6B00]/90
-                  file:cursor-pointer cursor-pointer"
-              />
-              {documents.emirates_id_document && (
-                <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                  <CheckCircle size={16} /> File selected
-                </p>
-              )}
-            </div>
+              {/* Visa */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Visa <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange(e, "visa_page_document")}
+                  required
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:bg-[#FF6B00] file:text-white
+                    hover:file:bg-[#FF6B00]/90
+                    file:cursor-pointer cursor-pointer"
+                />
+                {documents.visa_page_document && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle size={16} /> {documents.visa_page_document.name}
+                  </p>
+                )}
+              </div>
 
-            {/* Degree */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Degree Certificate <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="file"
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => handleFileChange(e, "degree_document")}
-                required
-                className="block w-full text-sm text-gray-500
-                  file:mr-4 file:py-2 file:px-4
-                  file:rounded-lg file:border-0
-                  file:text-sm file:font-medium
-                  file:bg-[#FF6B00] file:text-white
-                  hover:file:bg-[#FF6B00]/90
-                  file:cursor-pointer cursor-pointer"
-              />
-              {documents.degree_document && (
-                <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
-                  <CheckCircle size={16} /> File selected
-                </p>
-              )}
+              {/* Passport Photo */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Passport Photo <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange(e, "photo_document")}
+                  required
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:bg-[#FF6B00] file:text-white
+                    hover:file:bg-[#FF6B00]/90
+                    file:cursor-pointer cursor-pointer"
+                />
+                {documents.photo_document && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle size={16} /> {documents.photo_document.name}
+                  </p>
+                )}
+              </div>
+
+              {/* Certificate */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Certificate <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange(e, "degree_document")}
+                  required
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:bg-[#FF6B00] file:text-white
+                    hover:file:bg-[#FF6B00]/90
+                    file:cursor-pointer cursor-pointer"
+                />
+                {documents.degree_document && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle size={16} /> {documents.degree_document.name}
+                  </p>
+                )}
+              </div>
+
+              {/* Emirates ID (Optional) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Emirates ID <span className="text-gray-500">(Optional)</span>
+                </label>
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  onChange={(e) => handleFileChange(e, "emirates_id_document")}
+                  className="block w-full text-sm text-gray-500
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:bg-[#FF6B00] file:text-white
+                    hover:file:bg-[#FF6B00]/90
+                    file:cursor-pointer cursor-pointer"
+                />
+                {documents.emirates_id_document && (
+                  <p className="mt-2 text-sm text-green-600 flex items-center gap-1">
+                    <CheckCircle size={16} /> {documents.emirates_id_document.name}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -359,12 +723,12 @@ export default function DocumentUploadPage() {
               {uploading ? (
                 <>
                   <Loader2 className="animate-spin" size={20} />
-                  Uploading Documents...
+                  Submitting...
                 </>
               ) : (
                 <>
                   <Upload size={20} />
-                  Upload Documents
+                  Submit Information & Documents
                 </>
               )}
             </button>

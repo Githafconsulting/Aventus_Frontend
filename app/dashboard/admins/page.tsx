@@ -14,6 +14,7 @@ import {
   CheckCircle,
   XCircle,
   Trash2,
+  Edit2,
   Calendar,
   Briefcase,
   Users,
@@ -72,6 +73,8 @@ export default function AdminsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all");
   const [selectedRole, setSelectedRole] = useState<string>("all");
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingUser, setEditingUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -162,6 +165,67 @@ export default function AdminsPage() {
       fetchUsers();
     } catch (err: any) {
       console.error("Error creating user:", err);
+      alert(`Error: ${err.message}`);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEditUser = (user: User) => {
+    setEditingUser(user);
+    setFormData({
+      name: user.name,
+      email: user.email,
+      phone_number: user.phone_number || "",
+      role: user.role,
+      is_active: user.is_active,
+      profile_photo: user.profile_photo || "",
+      permissions: user.permissions || {},
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdateUser = async () => {
+    if (!editingUser) return;
+
+    try {
+      setSubmitting(true);
+      const token = localStorage.getItem("aventus-auth-token");
+
+      if (!token) {
+        alert("Not authenticated");
+        return;
+      }
+
+      // Validate form
+      if (!formData.name || !formData.email) {
+        alert("Please fill in all required fields");
+        return;
+      }
+
+      const response = await fetch(`http://localhost:8000/api/v1/auth/users/${editingUser.id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to update user");
+      }
+
+      // Success
+      const roleLabel = getRoleLabel(formData.role);
+      alert(`${roleLabel} updated successfully!`);
+      setShowEditModal(false);
+      setEditingUser(null);
+      resetForm();
+      fetchUsers();
+    } catch (err: any) {
+      console.error("Error updating user:", err);
       alert(`Error: ${err.message}`);
     } finally {
       setSubmitting(false);
@@ -357,7 +421,7 @@ export default function AdminsPage() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="mt-4 md:mt-0 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center gap-2 w-fit"
+          className="mt-4 md:mt-0 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 px-6 btn-parallelogram transition-all flex items-center gap-2 w-fit"
         >
           <Plus size={20} />
           Add User
@@ -369,7 +433,7 @@ export default function AdminsPage() {
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-4 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
           <p className="text-gray-400 text-xs mb-1">Total</p>
           <p className={`text-2xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
@@ -380,7 +444,7 @@ export default function AdminsPage() {
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-4 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
           <p className="text-gray-400 text-xs mb-1">Admins</p>
           <p className="text-2xl font-bold text-purple-500">{stats.admins}</p>
@@ -389,7 +453,7 @@ export default function AdminsPage() {
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-4 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
           <p className="text-gray-400 text-xs mb-1">Consultants</p>
           <p className="text-2xl font-bold text-blue-500">{stats.consultants}</p>
@@ -398,7 +462,7 @@ export default function AdminsPage() {
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-4 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
           <p className="text-gray-400 text-xs mb-1">Clients</p>
           <p className="text-2xl font-bold text-green-500">{stats.clients}</p>
@@ -407,7 +471,7 @@ export default function AdminsPage() {
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-4 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
           <p className="text-gray-400 text-xs mb-1">Contractors</p>
           <p className="text-2xl font-bold text-orange-500">{stats.contractors}</p>
@@ -416,7 +480,7 @@ export default function AdminsPage() {
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-4 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
           <p className="text-gray-400 text-xs mb-1">Active</p>
           <p className="text-2xl font-bold text-green-500">{stats.active}</p>
@@ -425,7 +489,7 @@ export default function AdminsPage() {
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-4 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
           <p className="text-gray-400 text-xs mb-1">Inactive</p>
           <p className="text-2xl font-bold text-gray-500">{stats.inactive}</p>
@@ -436,7 +500,7 @@ export default function AdminsPage() {
       <div
         className={`${
           theme === "dark" ? "bg-gray-900" : "bg-white"
-        } rounded-lg p-6 shadow-sm mb-6`}
+        } card-parallelogram p-6 shadow-sm mb-6`}
       >
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Search */}
@@ -451,7 +515,7 @@ export default function AdminsPage() {
                 placeholder="Search by name, email or phone..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-all outline-none ${
+                className={`w-full pl-10 pr-4 py-3 input-parallelogram border transition-all outline-none ${
                   theme === "dark"
                     ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                     : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -465,7 +529,7 @@ export default function AdminsPage() {
             <select
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+              className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
                 theme === "dark"
                   ? "bg-gray-800 border-gray-700 text-white"
                   : "bg-white border-gray-300 text-gray-900"
@@ -484,7 +548,7 @@ export default function AdminsPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+              className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
                 theme === "dark"
                   ? "bg-gray-800 border-gray-700 text-white"
                   : "bg-white border-gray-300 text-gray-900"
@@ -517,7 +581,7 @@ export default function AdminsPage() {
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg shadow-sm overflow-hidden`}
+          } card-parallelogram shadow-sm overflow-hidden`}
         >
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -637,13 +701,22 @@ export default function AdminsPage() {
 
                     {/* Actions */}
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button
-                        onClick={() => handleDeleteUser(user.id, user.name, user.role)}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-all text-sm font-medium"
-                      >
-                        <Trash2 size={14} />
-                        Delete
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => handleEditUser(user)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 btn-parallelogram bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-all text-sm font-medium"
+                        >
+                          <Edit2 size={14} />
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user.id, user.name, user.role)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 btn-parallelogram bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-all text-sm font-medium"
+                        >
+                          <Trash2 size={14} />
+                          Delete
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -675,7 +748,7 @@ export default function AdminsPage() {
           <div
             className={`${
               theme === "dark" ? "bg-gray-900" : "bg-white"
-            } rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto`}
+            } card-parallelogram max-w-2xl w-full max-h-[90vh] overflow-y-auto`}
           >
             <div className="p-6 border-b border-gray-800">
               <div className="flex items-center justify-between">
@@ -709,7 +782,7 @@ export default function AdminsPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, role: e.target.value, permissions: {} })
                   }
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                  className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
                     theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
@@ -734,7 +807,7 @@ export default function AdminsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, name: e.target.value })
                     }
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
                       theme === "dark"
                         ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -753,7 +826,7 @@ export default function AdminsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, email: e.target.value })
                     }
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
                       theme === "dark"
                         ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -774,7 +847,7 @@ export default function AdminsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, phone_number: e.target.value })
                     }
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
                       theme === "dark"
                         ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                         : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -791,7 +864,7 @@ export default function AdminsPage() {
                     onChange={(e) =>
                       setFormData({ ...formData, is_active: e.target.value === "active" })
                     }
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
                       theme === "dark"
                         ? "bg-gray-800 border-gray-700 text-white"
                         : "bg-white border-gray-300 text-gray-900"
@@ -814,7 +887,7 @@ export default function AdminsPage() {
                   onChange={(e) =>
                     setFormData({ ...formData, profile_photo: e.target.value })
                   }
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                  className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
                     theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                       : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -862,7 +935,7 @@ export default function AdminsPage() {
                   resetForm();
                 }}
                 disabled={submitting}
-                className={`flex-1 py-3 rounded-lg font-medium transition-all ${
+                className={`flex-1 py-3 btn-parallelogram font-medium transition-all ${
                   theme === "dark"
                     ? "bg-gray-800 hover:bg-gray-700 text-white"
                     : "bg-gray-100 hover:bg-gray-200 text-gray-900"
@@ -873,9 +946,218 @@ export default function AdminsPage() {
               <button
                 onClick={handleAddUser}
                 disabled={submitting}
-                className="flex-1 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 rounded-lg transition-all disabled:opacity-50"
+                className="flex-1 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 btn-parallelogram transition-all disabled:opacity-50"
               >
                 {submitting ? "Adding..." : `Add ${getRoleLabel(formData.role)}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit User Modal */}
+      {showEditModal && editingUser && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div
+            className={`${
+              theme === "dark" ? "bg-gray-900" : "bg-white"
+            } card-parallelogram max-w-2xl w-full max-h-[90vh] overflow-y-auto`}
+          >
+            <div className="p-6 border-b border-gray-800">
+              <div className="flex items-center justify-between">
+                <h2
+                  className={`text-2xl font-bold ${
+                    theme === "dark" ? "text-white" : "text-gray-900"
+                  }`}
+                >
+                  Edit {getRoleLabel(formData.role)}
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingUser(null);
+                    resetForm();
+                  }}
+                  className="text-gray-400 hover:text-white transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Role Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Role *
+                </label>
+                <select
+                  value={formData.role}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role: e.target.value, permissions: {} })
+                  }
+                  className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
+                    theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                >
+                  <option value="admin">Admin</option>
+                  <option value="consultant">Consultant</option>
+                  <option value="client">Client</option>
+                  <option value="contractor">Contractor</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter full name"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
+                      theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="user@example.com"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
+                      theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="+1 (555) 000-0000"
+                    value={formData.phone_number}
+                    onChange={(e) =>
+                      setFormData({ ...formData, phone_number: e.target.value })
+                    }
+                    className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
+                      theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Status
+                  </label>
+                  <select
+                    value={formData.is_active ? "active" : "inactive"}
+                    onChange={(e) =>
+                      setFormData({ ...formData, is_active: e.target.value === "active" })
+                    }
+                    className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
+                      theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                  >
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Profile Photo URL (optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://example.com/photo.jpg"
+                  value={formData.profile_photo}
+                  onChange={(e) =>
+                    setFormData({ ...formData, profile_photo: e.target.value })
+                  }
+                  className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
+                    theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
+                      : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                />
+              </div>
+
+              {permissionsList.length > 0 && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Permissions for {getRoleLabel(formData.role)}
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {permissionsList.map((permission) => (
+                      <label
+                        key={permission.key}
+                        className="flex items-center gap-2 cursor-pointer"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={formData.permissions[permission.key] || false}
+                          onChange={(e) =>
+                            handlePermissionChange(permission.key, e.target.checked)
+                          }
+                          className="w-4 h-4 text-[#FF6B00] border-gray-300 rounded focus:ring-[#FF6B00]"
+                        />
+                        <span className="text-sm text-gray-400">{permission.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-800 flex gap-4">
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingUser(null);
+                  resetForm();
+                }}
+                disabled={submitting}
+                className={`flex-1 py-3 btn-parallelogram font-medium transition-all ${
+                  theme === "dark"
+                    ? "bg-gray-800 hover:bg-gray-700 text-white"
+                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
+                } disabled:opacity-50`}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUpdateUser}
+                disabled={submitting}
+                className="flex-1 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 btn-parallelogram transition-all disabled:opacity-50"
+              >
+                {submitting ? "Updating..." : `Update ${getRoleLabel(formData.role)}`}
               </button>
             </div>
           </div>

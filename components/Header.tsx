@@ -98,7 +98,9 @@ export default function Header() {
   }, []);
 
   return (
-    <header className="bg-white border-b border-gray-200 px-8 py-4">
+    <header className="bg-white border-b border-gray-200 px-8 py-4 relative">
+      {/* Decorative Line */}
+      <div className="absolute bottom-0 left-0 w-full h-[2px] bg-gradient-to-r from-transparent via-[#FF6B00] to-transparent"></div>
       <div className="flex items-center justify-between">
         {/* Left Section */}
         <div>
@@ -114,7 +116,7 @@ export default function Header() {
         <div className="flex items-center gap-4">
           {/* Status Badge for Contractors */}
           {user?.role === "contractor" && (
-            <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-green-500/10 text-green-600">
+            <span className="px-3 py-1.5 btn-parallelogram text-xs font-semibold bg-green-500/10 text-green-600">
               ● Active
             </span>
           )}
@@ -123,7 +125,7 @@ export default function Header() {
           <div className="relative" ref={notificationRef}>
             <button
               onClick={() => setShowNotifications(!showNotifications)}
-              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all"
+              className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 btn-parallelogram transition-all"
             >
               <Bell size={20} />
               {unreadCount > 0 && (
@@ -135,7 +137,7 @@ export default function Header() {
 
             {/* Notifications Dropdown */}
             {showNotifications && (
-              <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+              <div className="absolute right-0 mt-2 w-96 bg-white card-parallelogram shadow-xl border border-gray-200 z-50">
                 <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                   <h3 className="font-semibold text-gray-900">Notifications</h3>
                   {unreadCount > 0 && (
@@ -188,7 +190,7 @@ export default function Header() {
           <div className="relative" ref={profileRef}>
             <button
               onClick={() => setShowProfileMenu(!showProfileMenu)}
-              className="flex items-center gap-3 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-all"
+              className="flex items-center gap-3 px-4 py-2 bg-gray-100 btn-parallelogram hover:bg-gray-200 transition-all"
             >
               <div className="w-8 h-8 bg-[#FF6B00] rounded-full flex items-center justify-center text-white font-semibold">
                 {user?.name?.charAt(0) || "U"}
@@ -203,7 +205,7 @@ export default function Header() {
 
             {/* Profile Dropdown */}
             {showProfileMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl border border-gray-200 z-50">
+              <div className="absolute right-0 mt-2 w-64 bg-white card-parallelogram shadow-xl border border-gray-200 z-50">
                 <div className="p-4 border-b border-gray-200">
                   <p className="font-semibold text-gray-900">{user?.name || "User"}</p>
                   <p className="text-sm text-gray-500">{user?.email || ""}</p>

@@ -6,6 +6,19 @@ export type ContractorStatus =
   | "active"             // Account activated, can login
   | "suspended";         // Account suspended
 
+// Country Types
+export type CountryType = "Saudi Arabia" | "UAE" | "Qatar";
+
+// Business Type - determines workflow
+export type BusinessType =
+  | "3rd_party_perm"           // Third-party permanent placements
+  | "3rd_party_saudi"          // Saudi Arabia third-party contractors
+  | "3rd_party_uae"            // UAE third-party contractors
+  | "3rd_party_payroll"        // UAE payroll-only contractors
+  | "av_remote_freelancer"     // Direct Aventus freelancers
+  | "av_remote_wps"            // Direct Aventus WPS contractors
+  | "enterprise_client";       // PWC, Deloitte, Oracle, etc.
+
 // Signature Type
 export interface SignatureData {
   type: "typed" | "drawn";
@@ -16,6 +29,10 @@ export interface SignatureData {
 // Complete Contractor Interface
 export interface Contractor {
   id: string;
+
+  // Country & Business Type (determines workflow)
+  country: CountryType;
+  businessType: BusinessType;
 
   // Status & Workflow
   status: ContractorStatus;

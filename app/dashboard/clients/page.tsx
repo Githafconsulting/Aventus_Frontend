@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
-import CountrySelect from "@/components/CountrySelect";
+import { API_ENDPOINTS } from "@/lib/config";
 import {
   Search,
   Plus,
@@ -11,137 +12,178 @@ import {
   Mail,
   Phone,
   MapPin,
-  Briefcase,
-  Users,
   CheckCircle,
   XCircle,
-  Clock,
-  Edit,
+  Edit2,
   Trash2,
-  Eye,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 
 interface Client {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  location: string;
-  status: "active" | "inactive" | "pending";
-  projectsCount: number;
-  contractorsCount: number;
-  industry: string;
-  contactPerson: string;
-  joinDate: string;
-  projects: string[];
+  id: string;
+  company_name: string;
+  industry: string | null;
+  company_reg_no: string | null;
+  company_vat_no: string | null;
+  address_line1: string | null;
+  address_line2: string | null;
+  address_line3: string | null;
+  address_line4: string | null;
+  country: string | null;
+  contact_person_name: string | null;
+  contact_person_email: string | null;
+  contact_person_phone: string | null;
+  contact_person_title: string | null;
+  bank_name: string | null;
+  account_number: string | null;
+  iban_number: string | null;
+  swift_code: string | null;
+  website: string | null;
+  notes: string | null;
+  work_order_applicable: boolean;
+  proposal_applicable: boolean;
+  timesheet_required: boolean;
+  timesheet_approver_name: string | null;
+  po_required: boolean;
+  po_number: string | null;
+  contractor_pay_frequency: string | null;
+  client_invoice_frequency: string | null;
+  client_payment_terms: string | null;
+  invoicing_preferences: string | null;
+  invoice_instructions: string | null;
+  supporting_documents_required: string[];
+  documents: any[];
+  is_active: boolean;
+  created_at: string;
+  updated_at: string | null;
 }
 
 export default function ClientsPage() {
   const { theme } = useTheme();
+  const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<string>("all");
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [expandedClient, setExpandedClient] = useState<number | null>(null);
-  const [projects, setProjects] = useState<string[]>([""]);
+  const [selectedStatus, setSelectedStatus] = useState<string>("active");
   const [clientsData, setClientsData] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Load clients from API
-  React.useEffect(() => {
-    const loadClients = async () => {
-      try {
-        // TODO: Replace with actual API endpoint when backend is ready
-        // const token = localStorage.getItem("aventus-auth-token");
-        // const response = await fetch("http://localhost:8000/api/v1/clients", {
-        //   headers: {
-        //     Authorization: `Bearer ${token}`,
-        //   },
-        // });
-        // const data = await response.json();
-        // setClientsData(data);
-
-        // For now, set empty array until backend API is implemented
-        setClientsData([]);
-        setLoading(false);
-      } catch (error) {
-        console.error("Error loading clients:", error);
-        setClientsData([]);
-        setLoading(false);
-      }
-    };
-
-    loadClients();
+  useEffect(() => {
+    fetchClients();
   }, []);
 
-  const addProject = () => {
-    setProjects([...projects, ""]);
+  const fetchClients = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("aventus-auth-token");
+
+      if (!token) {
+        setError("Not authenticated");
+        router.push("/");
+        return;
+      }
+
+      const response = await fetch(
+        `${API_ENDPOINTS.clients}?include_inactive=true`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.status === 401) {
+        localStorage.removeItem("aventus-auth-token");
+        router.push("/");
+        return;
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to fetch clients");
+      }
+
+      const data = await response.json();
+      setClientsData(data);
+      setError(null);
+    } catch (err) {
+      console.error("Error fetching clients:", err);
+      setError("Failed to load clients");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const removeProject = (index: number) => {
-    setProjects(projects.filter((_, i) => i !== index));
-  };
+  const handleDeleteClient = async (id: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete ${name}?`)) {
+      return;
+    }
 
-  const updateProject = (index: number, value: string) => {
-    const updatedProjects = [...projects];
-    updatedProjects[index] = value;
-    setProjects(updatedProjects);
-  };
+    try {
+      const token = localStorage.getItem("aventus-auth-token");
 
-  const closeModal = () => {
-    setShowAddModal(false);
-    setProjects([""]);  // Reset projects when closing
+      if (!token) {
+        alert("Not authenticated");
+        return;
+      }
+
+      const response = await fetch(API_ENDPOINTS.clientById(id), {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to delete client");
+      }
+
+      alert("Client deleted successfully");
+      fetchClients();
+    } catch (err: any) {
+      console.error("Error deleting client:", err);
+      alert(`Error: ${err.message}`);
+    }
   };
 
   // Filter clients
   const filteredClients = clientsData.filter((client) => {
     const matchesSearch =
-      client.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.location.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      client.contactPerson.toLowerCase().includes(searchQuery.toLowerCase());
+      client.company_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (client.contact_person_name &&
+        client.contact_person_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (client.contact_person_email &&
+        client.contact_person_email.toLowerCase().includes(searchQuery.toLowerCase()));
 
     const matchesStatus =
-      selectedStatus === "all" || client.status === selectedStatus;
+      selectedStatus === "all" || (client.is_active ? "active" : "inactive") === selectedStatus;
 
     return matchesSearch && matchesStatus;
   });
 
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case "active":
-        return (
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/10 text-green-500 flex items-center gap-1">
-            <CheckCircle size={12} />
-            Active
-          </span>
-        );
-      case "pending":
-        return (
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-yellow-500/10 text-yellow-500 flex items-center gap-1">
-            <Clock size={12} />
-            Pending
-          </span>
-        );
-      case "inactive":
-        return (
-          <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-500/10 text-gray-500 flex items-center gap-1">
-            <XCircle size={12} />
-            Inactive
-          </span>
-        );
-      default:
-        return null;
+  const getStatusBadge = (is_active: boolean) => {
+    if (is_active) {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-green-500/10 text-green-500 flex items-center gap-1 w-fit">
+          <CheckCircle size={12} />
+          Active
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-gray-500/10 text-gray-500 flex items-center gap-1 w-fit">
+          <XCircle size={12} />
+          Inactive
+        </span>
+      );
     }
   };
 
-  const stats = React.useMemo(() => ({
+  const stats = {
     total: clientsData.length,
-    active: clientsData.filter((c) => c.status === "active").length,
-    pending: clientsData.filter((c) => c.status === "pending").length,
-    inactive: clientsData.filter((c) => c.status === "inactive").length,
-  }), [clientsData]);
+    active: clientsData.filter((c) => c.is_active).length,
+    inactive: clientsData.filter((c) => !c.is_active).length,
+  };
 
   return (
     <DashboardLayout>
@@ -153,15 +195,15 @@ export default function ClientsPage() {
               theme === "dark" ? "text-white" : "text-gray-900"
             }`}
           >
-            Clients
+            Client Companies
           </h1>
           <p className="text-gray-400 mt-2">
-            Manage client companies and their projects
+            Manage client companies and their details
           </p>
         </div>
         <button
-          onClick={() => setShowAddModal(true)}
-          className="mt-4 md:mt-0 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center gap-2 w-fit"
+          onClick={() => router.push("/dashboard/clients/add")}
+          className="mt-4 md:mt-0 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 px-6 btn-parallelogram transition-all flex items-center gap-2 w-fit"
         >
           <Plus size={20} />
           Add Client
@@ -169,75 +211,38 @@ export default function ClientsPage() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-6 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Total Clients</p>
-              <p
-                className={`text-3xl font-bold ${
-                  theme === "dark" ? "text-white" : "text-gray-900"
-                }`}
-              >
-                {stats.total}
-              </p>
-            </div>
-            <div className="p-3 bg-[#FF6B00]/10 rounded-lg">
-              <Building className="text-[#FF6B00]" size={24} />
-            </div>
-          </div>
+          <p className="text-gray-400 text-xs mb-1">Total</p>
+          <p
+            className={`text-2xl font-bold ${
+              theme === "dark" ? "text-white" : "text-gray-900"
+            }`}
+          >
+            {stats.total}
+          </p>
         </div>
 
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-6 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Active</p>
-              <p className="text-3xl font-bold text-green-500">{stats.active}</p>
-            </div>
-            <div className="p-3 bg-green-500/10 rounded-lg">
-              <CheckCircle className="text-green-500" size={24} />
-            </div>
-          </div>
+          <p className="text-gray-400 text-xs mb-1">Active</p>
+          <p className="text-2xl font-bold text-green-500">{stats.active}</p>
         </div>
 
         <div
           className={`${
             theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-6 shadow-sm`}
+          } stats-parallelogram p-4 shadow-sm`}
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Pending</p>
-              <p className="text-3xl font-bold text-yellow-500">{stats.pending}</p>
-            </div>
-            <div className="p-3 bg-yellow-500/10 rounded-lg">
-              <Clock className="text-yellow-500" size={24} />
-            </div>
-          </div>
-        </div>
-
-        <div
-          className={`${
-            theme === "dark" ? "bg-gray-900" : "bg-white"
-          } rounded-lg p-6 shadow-sm`}
-        >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-gray-400 text-sm mb-1">Inactive</p>
-              <p className="text-3xl font-bold text-gray-500">{stats.inactive}</p>
-            </div>
-            <div className="p-3 bg-gray-500/10 rounded-lg">
-              <XCircle className="text-gray-500" size={24} />
-            </div>
-          </div>
+          <p className="text-gray-400 text-xs mb-1">Inactive</p>
+          <p className="text-2xl font-bold text-gray-500">{stats.inactive}</p>
         </div>
       </div>
 
@@ -245,11 +250,11 @@ export default function ClientsPage() {
       <div
         className={`${
           theme === "dark" ? "bg-gray-900" : "bg-white"
-        } rounded-lg p-6 shadow-sm mb-6`}
+        } card-parallelogram p-6 shadow-sm mb-6`}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Search */}
-          <div className="md:col-span-2">
+          <div>
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
@@ -257,10 +262,10 @@ export default function ClientsPage() {
               />
               <input
                 type="text"
-                placeholder="Search clients by name, email, location or contact person..."
+                placeholder="Search by company name, contact person or email..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-all outline-none ${
+                className={`w-full pl-10 pr-4 py-3 input-parallelogram border transition-all outline-none ${
                   theme === "dark"
                     ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                     : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -274,7 +279,7 @@ export default function ClientsPage() {
             <select
               value={selectedStatus}
               onChange={(e) => setSelectedStatus(e.target.value)}
-              className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+              className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
                 theme === "dark"
                   ? "bg-gray-800 border-gray-700 text-white"
                   : "bg-white border-gray-300 text-gray-900"
@@ -282,554 +287,186 @@ export default function ClientsPage() {
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
-              <option value="pending">Pending</option>
               <option value="inactive">Inactive</option>
             </select>
           </div>
         </div>
       </div>
 
-      {/* Loading State */}
+      {/* Loading/Error States */}
       {loading && (
-        <div className={`${
-          theme === "dark" ? "bg-gray-900" : "bg-white"
-        } rounded-lg shadow-sm p-12`}>
-          <div className="flex items-center justify-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00]"></div>
-          </div>
+        <div className="text-center py-12">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#FF6B00] mx-auto"></div>
+          <p className="text-gray-400 mt-4">Loading clients...</p>
         </div>
       )}
 
-      {/* Clients Table */}
-      {!loading && (
-      <div
-        className={`${
-          theme === "dark" ? "bg-gray-900" : "bg-white"
-        } rounded-lg shadow-sm overflow-hidden`}
-      >
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr
-                className={`border-b ${
-                  theme === "dark" ? "border-gray-800 bg-gray-800" : "border-gray-200 bg-gray-50"
-                }`}
-              >
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">
-                  Client Name
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">
-                  Contact Person
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">
-                  Location
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">
-                  Email & Phone
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">
-                  Projects
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">
-                  Status
-                </th>
-                <th className="px-6 py-4 text-left text-sm font-semibold text-gray-400">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredClients.map((client) => (
-                <React.Fragment key={client.id}>
+      {error && (
+        <div className="bg-red-500/10 border border-red-500 rounded-lg p-4 mb-6">
+          <p className="text-red-500">{error}</p>
+        </div>
+      )}
+
+      {/* Clients List */}
+      {!loading && !error && (
+        <div
+          className={`${
+            theme === "dark" ? "bg-gray-900" : "bg-white"
+          } card-parallelogram shadow-sm overflow-hidden`}
+        >
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className={`${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
+                <tr>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Company
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Industry
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Contact Person
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Location
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-right text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-700">
+                {filteredClients.map((client) => (
                   <tr
-                    className={`border-b ${
-                      theme === "dark"
-                        ? "border-gray-800 hover:bg-gray-800"
-                        : "border-gray-100 hover:bg-gray-50"
-                    } transition-all`}
+                    key={client.id}
+                    className={`${
+                      theme === "dark" ? "hover:bg-gray-800" : "hover:bg-gray-50"
+                    } transition-colors`}
                   >
-                    {/* Client Name */}
+                    {/* Company */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 bg-[#FF6B00] rounded-lg flex items-center justify-center text-white font-semibold">
-                          {client.name.charAt(0)}
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-sm">
+                          {client.company_name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <p
-                            className={`font-semibold ${
+                          <div
+                            className={`text-sm font-semibold ${
                               theme === "dark" ? "text-white" : "text-gray-900"
                             }`}
                           >
-                            {client.name}
-                          </p>
-                          <p className="text-xs text-gray-400">{client.industry}</p>
+                            {client.company_name}
+                          </div>
                         </div>
+                      </div>
+                    </td>
+
+                    {/* Industry */}
+                    <td className="px-6 py-4">
+                      <div className="text-sm text-gray-400">
+                        {client.industry || <span className="text-xs text-gray-500">Not specified</span>}
                       </div>
                     </td>
 
                     {/* Contact Person */}
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <Users size={16} className="text-gray-400" />
-                        <p
-                          className={`text-sm ${
-                            theme === "dark" ? "text-white" : "text-gray-900"
-                          }`}
-                        >
-                          {client.contactPerson}
-                        </p>
+                      <div className="text-sm text-gray-400">
+                        {client.contact_person_name && (
+                          <div className="font-medium mb-1">{client.contact_person_name}</div>
+                        )}
+                        {client.contact_person_email && (
+                          <div className="flex items-center gap-2 mb-1">
+                            <Mail size={12} />
+                            <span className="truncate max-w-[180px]">
+                              {client.contact_person_email}
+                            </span>
+                          </div>
+                        )}
+                        {client.contact_person_phone && (
+                          <div className="flex items-center gap-2">
+                            <Phone size={12} />
+                            <span>{client.contact_person_phone}</span>
+                          </div>
+                        )}
+                        {!client.contact_person_name &&
+                          !client.contact_person_email &&
+                          !client.contact_person_phone && (
+                            <span className="text-xs text-gray-500">No contact info</span>
+                          )}
                       </div>
                     </td>
 
                     {/* Location */}
                     <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <MapPin size={16} className="text-gray-400" />
-                        <p className="text-sm text-gray-400">{client.location}</p>
-                      </div>
-                    </td>
+                      <div className="text-sm text-gray-400">
+                        {(() => {
+                          const addressParts = [
+                            client.address_line1,
+                            client.address_line2,
+                            client.address_line3,
+                            client.address_line4,
+                            client.country
+                          ].filter(Boolean);
+                          const fullAddress = addressParts.join(', ');
 
-                    {/* Email & Phone */}
-                    <td className="px-6 py-4">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <Mail size={14} className="text-gray-400" />
-                          <p className="text-xs text-gray-400">{client.email}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Phone size={14} className="text-gray-400" />
-                          <p className="text-xs text-gray-400">{client.phone}</p>
-                        </div>
+                          return fullAddress ? (
+                            <div className="flex items-center gap-2">
+                              <MapPin size={12} />
+                              <span className="truncate max-w-[200px]">{fullAddress}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-gray-500">No address</span>
+                          );
+                        })()}
                       </div>
-                    </td>
-
-                    {/* Projects - Now Clickable */}
-                    <td className="px-6 py-4">
-                      <button
-                        onClick={() => setExpandedClient(expandedClient === client.id ? null : client.id)}
-                        className={`flex items-center gap-3 p-2 rounded-lg transition-all ${
-                          theme === "dark"
-                            ? "hover:bg-gray-700"
-                            : "hover:bg-gray-100"
-                        }`}
-                      >
-                        <div className="text-center">
-                          <p
-                            className={`text-lg font-bold ${
-                              theme === "dark" ? "text-white" : "text-gray-900"
-                            }`}
-                          >
-                            {client.projectsCount}
-                          </p>
-                          <p className="text-xs text-gray-400">Projects</p>
-                        </div>
-                        <div className="text-center">
-                          <p
-                            className={`text-lg font-bold ${
-                              theme === "dark" ? "text-white" : "text-gray-900"
-                            }`}
-                          >
-                            {client.contractorsCount}
-                          </p>
-                          <p className="text-xs text-gray-400">Contractors</p>
-                        </div>
-                        {expandedClient === client.id ? (
-                          <ChevronUp size={16} className="text-gray-400" />
-                        ) : (
-                          <ChevronDown size={16} className="text-gray-400" />
-                        )}
-                      </button>
                     </td>
 
                     {/* Status */}
-                    <td className="px-6 py-4">{getStatusBadge(client.status)}</td>
+                    <td className="px-6 py-4">{getStatusBadge(client.is_active)}</td>
 
                     {/* Actions */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <div className="flex items-center justify-end gap-2">
                         <button
-                          className={`p-2 rounded-lg transition-all ${
-                            theme === "dark"
-                              ? "hover:bg-gray-700 text-gray-400 hover:text-white"
-                              : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
-                          }`}
-                          title="View Details"
+                          onClick={() => router.push(`/dashboard/clients/edit/${client.id}`)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 btn-parallelogram bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-all text-sm font-medium"
                         >
-                          <Eye size={18} />
+                          <Edit2 size={14} />
+                          Edit
                         </button>
                         <button
-                          className={`p-2 rounded-lg transition-all ${
-                            theme === "dark"
-                              ? "hover:bg-gray-700 text-gray-400 hover:text-white"
-                              : "hover:bg-gray-100 text-gray-600 hover:text-gray-900"
-                          }`}
-                          title="Edit"
+                          onClick={() => handleDeleteClient(client.id, client.company_name)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 btn-parallelogram bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-all text-sm font-medium"
                         >
-                          <Edit size={18} />
-                        </button>
-                        <button
-                          className="p-2 rounded-lg hover:bg-red-500/10 text-red-500 transition-all"
-                          title="Delete"
-                        >
-                          <Trash2 size={18} />
+                          <Trash2 size={14} />
+                          Delete
                         </button>
                       </div>
                     </td>
                   </tr>
-
-                  {/* Expanded Projects Row */}
-                  {expandedClient === client.id && (
-                    <tr
-                      className={`${
-                        theme === "dark" ? "bg-gray-800/50" : "bg-gray-50"
-                      }`}
-                    >
-                      <td colSpan={7} className="px-6 py-4">
-                        <div className="pl-16">
-                          <h4 className={`text-sm font-semibold mb-3 flex items-center gap-2 ${
-                            theme === "dark" ? "text-white" : "text-gray-900"
-                          }`}>
-                            <Briefcase size={16} className="text-[#FF6B00]" />
-                            Active Projects ({client.projects.length})
-                          </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                            {client.projects.map((project, index) => (
-                              <div
-                                key={index}
-                                className={`p-3 rounded-lg border ${
-                                  theme === "dark"
-                                    ? "bg-gray-900 border-gray-700"
-                                    : "bg-white border-gray-200"
-                                }`}
-                              >
-                                <div className="flex items-center gap-2">
-                                  <div className="w-2 h-2 bg-[#FF6B00] rounded-full"></div>
-                                  <p className={`text-sm font-medium ${
-                                    theme === "dark" ? "text-white" : "text-gray-900"
-                                  }`}>
-                                    {project}
-                                  </p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </React.Fragment>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredClients.length === 0 && (
-          <div className="text-center py-12">
-            <Building size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3
-              className={`text-lg font-semibold mb-2 ${
-                theme === "dark" ? "text-white" : "text-gray-900"
-              }`}
-            >
-              {searchQuery || selectedStatus !== "all" ? "No Clients Found" : "No Clients Yet"}
-            </h3>
-            <p className="text-gray-400">
-              {searchQuery || selectedStatus !== "all"
-                ? "Try adjusting your search or filter criteria"
-                : "Click 'Add Client' to create your first client"
-              }
-            </p>
+                ))}
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+        </div>
       )}
 
-      {/* Add Client Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div
-            className={`${
-              theme === "dark" ? "bg-gray-900" : "bg-white"
-            } rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto`}
+      {!loading && !error && filteredClients.length === 0 && (
+        <div className="text-center py-12">
+          <Building size={48} className="mx-auto text-gray-400 mb-4" />
+          <h3
+            className={`text-lg font-semibold mb-2 ${
+              theme === "dark" ? "text-white" : "text-gray-900"
+            }`}
           >
-            <div className="p-6 border-b border-gray-800">
-              <div className="flex items-center justify-between">
-                <h2
-                  className={`text-2xl font-bold ${
-                    theme === "dark" ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  Add New Client
-                </h2>
-                <button
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-white transition-all"
-                >
-                  ✕
-                </button>
-              </div>
-            </div>
-
-            <div className="p-6 space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Client Name
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Company name"
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                      theme === "dark"
-                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Industry
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g., Technology, Finance"
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                      theme === "dark"
-                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Contact Person
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="Full name"
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                      theme === "dark"
-                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    placeholder="email@company.com"
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                      theme === "dark"
-                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Phone
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="+1 (555) 000-0000"
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                      theme === "dark"
-                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">
-                    Location
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="City, Country"
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                      theme === "dark"
-                        ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                        : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                  />
-                </div>
-              </div>
-
-              {/* Address Details */}
-              <div className="border-t border-gray-700 pt-4 mt-4">
-                <h3 className={`text-sm font-semibold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                  Address Details
-                </h3>
-
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
-                      Address Line 1
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Street address"
-                      className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                        theme === "dark"
-                          ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                          : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                      } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-400 mb-2">
-                      Address Line 2
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Building, floor, suite (optional)"
-                      className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                        theme === "dark"
-                          ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                          : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                      } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        City
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="City"
-                        className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                          theme === "dark"
-                            ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                        } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        Postal Code
-                      </label>
-                      <input
-                        type="text"
-                        placeholder="Postal code"
-                        className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                          theme === "dark"
-                            ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                        } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium text-gray-400 mb-2">
-                        Country
-                      </label>
-                      <CountrySelect theme={theme} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Projects Section */}
-              <div className="border-t border-gray-700 pt-4 mt-4">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className={`text-sm font-semibold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                    Projects
-                  </h3>
-                  <button
-                    type="button"
-                    onClick={addProject}
-                    className="px-3 py-1.5 bg-[#FF6B00] hover:bg-[#FF8533] text-white text-xs font-medium rounded-lg transition-all flex items-center gap-1"
-                  >
-                    <Plus size={14} />
-                    Add Project
-                  </button>
-                </div>
-
-                <div className="space-y-3">
-                  {projects.map((project, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={project}
-                        onChange={(e) => updateProject(index, e.target.value)}
-                        placeholder={`Project ${index + 1}`}
-                        className={`flex-1 px-4 py-3 rounded-lg border transition-all outline-none ${
-                          theme === "dark"
-                            ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
-                            : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-                        } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                      />
-                      {projects.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => removeProject(index)}
-                          className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-lg transition-all"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Status
-                </label>
-                <select
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                >
-                  <option value="active">Active</option>
-                  <option value="pending">Pending</option>
-                  <option value="inactive">Inactive</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="p-6 border-t border-gray-800 flex gap-4">
-              <button
-                onClick={closeModal}
-                className={`flex-1 py-3 rounded-lg font-medium transition-all ${
-                  theme === "dark"
-                    ? "bg-gray-800 hover:bg-gray-700 text-white"
-                    : "bg-gray-100 hover:bg-gray-200 text-gray-900"
-                }`}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  // Handle form submission here
-                  alert("Client added successfully!");
-                  closeModal();
-                }}
-                className="flex-1 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 rounded-lg transition-all"
-              >
-                Add Client
-              </button>
-            </div>
-          </div>
+            No Clients Found
+          </h3>
+          <p className="text-gray-400">
+            Try adjusting your search or filter criteria
+          </p>
         </div>
       )}
     </DashboardLayout>
