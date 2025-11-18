@@ -384,8 +384,7 @@ export default function AddClientPage() {
               <label className="block text-sm font-medium text-gray-400 mb-2">
                 Country
               </label>
-              <input
-                type="text"
+              <select
                 name="country"
                 value={formData.country}
                 onChange={handleInputChange}
@@ -394,8 +393,25 @@ export default function AddClientPage() {
                     ? "bg-gray-800 border-gray-700 text-white"
                     : "bg-white border-gray-300 text-gray-900"
                 } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                placeholder="Country"
-              />
+              >
+                <option value="">Select country</option>
+                <option value="Bahrain">Bahrain</option>
+                <option value="Egypt">Egypt</option>
+                <option value="Iran">Iran</option>
+                <option value="Iraq">Iraq</option>
+                <option value="Israel">Israel</option>
+                <option value="Jordan">Jordan</option>
+                <option value="Kuwait">Kuwait</option>
+                <option value="Lebanon">Lebanon</option>
+                <option value="Oman">Oman</option>
+                <option value="Palestine">Palestine</option>
+                <option value="Qatar">Qatar</option>
+                <option value="Saudi Arabia">Saudi Arabia</option>
+                <option value="Syria">Syria</option>
+                <option value="Turkey">Turkey</option>
+                <option value="United Arab Emirates">United Arab Emirates</option>
+                <option value="Yemen">Yemen</option>
+              </select>
             </div>
           </div>
 
