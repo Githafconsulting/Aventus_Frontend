@@ -496,7 +496,7 @@ export default function ContractorsPage() {
                               <button
                                 onClick={() =>
                                   router.push(
-                                    `/dashboard/contractors/${contractor.id}/costing-sheet`
+                                    `/dashboard/contractors/complete-cds/${contractor.id}`
                                   )
                                 }
                                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2"
