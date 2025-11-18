@@ -90,8 +90,11 @@ export default function ContractorsPage() {
             c.passport_document,
             c.photo_document,
             c.visa_page_document,
+            c.id_front_document,
+            c.id_back_document,
             c.emirates_id_document,
-            c.degree_document
+            c.degree_document,
+            c.third_party_document  // Add third party quote sheet
           ].filter(Boolean).length;
 
           // Check if contractor has other documents
