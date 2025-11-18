@@ -25,7 +25,7 @@ export default function ContractorsPage() {
   const [loading, setLoading] = useState(true);
 
   const handleDelete = async (contractorId: string, contractorName: string) => {
-    if (!confirm(`Are you sure you want to delete ${contractorName}? This action cannot be undone.`)) {
+    if (!confirm(`Are you sure you want to cancel/delete ${contractorName}? This action cannot be undone.`)) {
       return;
     }
 
@@ -39,15 +39,16 @@ export default function ContractorsPage() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to delete contractor");
+        const errorData = await response.json().catch(() => ({ detail: "Failed to delete contractor" }));
+        throw new Error(errorData.detail || "Failed to delete contractor");
       }
 
-      alert(`Contractor ${contractorName} deleted successfully`);
+      alert(`Contractor ${contractorName} cancelled successfully`);
       // Refresh the contractors list
       setContractors(contractors.filter(c => c.id !== contractorId));
     } catch (error: any) {
       console.error("Error deleting contractor:", error);
-      alert(`Failed to delete contractor: ${error.message}`);
+      alert(`Failed to cancel contractor: ${error.message}`);
     }
   };
 
@@ -171,7 +172,7 @@ export default function ContractorsPage() {
         <div className="mt-4 md:mt-0 flex gap-3">
           <Link
             href="/dashboard/contractors/create-initial"
-            className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 px-6 rounded-lg transition-all flex items-center gap-2 w-fit"
+            className="bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-3 px-6 btn-parallelogram transition-all flex items-center gap-2 w-fit"
           >
             <Plus size={20} />
             Add Contractor
@@ -237,7 +238,7 @@ export default function ContractorsPage() {
       <div
         className={`${
           theme === "dark" ? "bg-gray-900" : "bg-white"
-        } rounded-lg p-4 shadow-sm mb-6`}
+        } card-parallelogram p-4 shadow-sm mb-6`}
       >
         <div className="flex items-center gap-4">
           <div className="flex-1 relative">
@@ -250,7 +251,7 @@ export default function ContractorsPage() {
               placeholder="Search contractors by name, email, or position..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className={`w-full pl-10 pr-4 py-3 rounded-lg border transition-all outline-none ${
+              className={`w-full pl-10 pr-4 py-3 input-parallelogram border transition-all outline-none ${
                 theme === "dark"
                   ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400"
                   : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -260,7 +261,7 @@ export default function ContractorsPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className={`px-4 py-3 rounded-lg border transition-all outline-none ${
+            className={`px-4 py-3 input-parallelogram border transition-all outline-none ${
               theme === "dark"
                 ? "bg-gray-800 border-gray-700 text-white"
                 : "bg-white border-gray-300 text-gray-900"
@@ -271,6 +272,7 @@ export default function ContractorsPage() {
             <option value="pending_documents">Pending Documents</option>
             <option value="documents_uploaded">Documents Uploaded</option>
             <option value="pending_review">Pending Review</option>
+            <option value="awaiting_work_order_approval">Awaiting Work Order Approval</option>
             <option value="approved">Approved</option>
             <option value="pending_signature">Pending Signature</option>
             <option value="signed">Signed</option>
@@ -284,7 +286,7 @@ export default function ContractorsPage() {
       <div
         className={`${
           theme === "dark" ? "bg-gray-900" : "bg-white"
-        } rounded-lg shadow-sm overflow-hidden`}
+        } card-parallelogram shadow-sm overflow-hidden`}
       >
         <div className="overflow-x-auto">
           <table className="w-full">
@@ -346,7 +348,7 @@ export default function ContractorsPage() {
                       {!searchQuery && statusFilter === "all" && contractStageFilter === "all" && (
                         <Link
                           href="/dashboard/contractors/create-initial"
-                          className="mt-4 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-2 px-6 rounded-lg transition-all"
+                          className="mt-4 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white font-medium py-2 px-6 btn-parallelogram transition-all"
                         >
                           Add First Contractor
                         </Link>
@@ -432,13 +434,17 @@ export default function ContractorsPage() {
                     {/* Status */}
                     <td className="px-6 py-4 text-center">
                       <span
-                        className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                        className={`inline-block px-3 py-1 btn-parallelogram text-xs font-semibold ${
                           contractor.status === "active"
                             ? "bg-green-500/10 text-green-500"
                             : contractor.status === "signed"
                             ? "bg-blue-500/10 text-blue-500"
                             : contractor.status === "approved"
-                            ? "bg-purple-500/10 text-purple-500"
+                            ? "bg-green-500/10 text-green-500"
+                            : contractor.status === "rejected"
+                            ? "bg-red-500/10 text-red-500"
+                            : contractor.status === "awaiting_work_order_approval"
+                            ? "bg-amber-500/10 text-amber-500"
                             : contractor.status === "pending_review"
                             ? "bg-orange-500/10 text-orange-500"
                             : contractor.status === "documents_uploaded"
@@ -454,30 +460,88 @@ export default function ContractorsPage() {
                             : "bg-gray-500/10 text-gray-500"
                         }`}
                       >
-                        {contractor.status.charAt(0).toUpperCase() +
-                          contractor.status.slice(1).replace(/_/g, ' ')}
+                        {contractor.status === "approved"
+                          ? (user?.role === "consultant" ? "Approved - Send Contract" : "Approved")
+                          : contractor.status === "rejected"
+                          ? "Rejected"
+                          : contractor.status.charAt(0).toUpperCase() +
+                            contractor.status.slice(1).replace(/_/g, ' ')}
                       </span>
                     </td>
 
                     {/* Actions */}
                     <td className="px-6 py-4 text-center">
-                      {contractor.status === "documents_uploaded" ? (
-                        <button
-                          onClick={() =>
-                            router.push(
-                              `/dashboard/contractors/complete-cds/${contractor.id}`
-                            )
-                          }
-                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-all text-sm font-medium flex items-center gap-2 mx-auto"
-                        >
-                          Next: Fill CDS Form
-                          <ArrowRight size={16} />
-                        </button>
+                      {contractor.status === "pending_documents" ? (
+                        <div className="flex items-center gap-2 justify-center">
+                          <span className="px-3 py-2 bg-amber-100 text-amber-700 btn-parallelogram text-xs font-medium">
+                            Awaiting Documents
+                          </span>
+                          <button
+                            onClick={() => handleDelete(contractor.id, contractor.name)}
+                            className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : contractor.status === "documents_uploaded" ? (
+                        user?.role === "consultant" ? (
+                          <div className="flex items-center gap-2 justify-center">
+                            <button
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/contractors/${contractor.id}/select-route`
+                                )
+                              }
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2"
+                            >
+                              Select Route
+                              <ArrowRight size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(contractor.id, contractor.name)}
+                              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 justify-center">
+                            <span className="px-3 py-2 bg-blue-100 text-blue-700 btn-parallelogram text-xs font-medium">
+                              Awaiting Route Selection
+                            </span>
+                            <button
+                              onClick={() => handleDelete(contractor.id, contractor.name)}
+                              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )
+                      ) : contractor.status === "pending_third_party_response" ? (
+                        <div className="flex items-center gap-2 justify-center">
+                          <span className="px-3 py-2 bg-purple-100 text-purple-700 btn-parallelogram text-xs font-medium">
+                            Awaiting 3rd Party
+                          </span>
+                          <button
+                            onClick={() => handleDelete(contractor.id, contractor.name)}
+                            className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                          >
+                            Cancel
+                          </button>
+                        </div>
                       ) : contractor.status === "pending_review" ? (
                         user?.role === "consultant" ? (
-                          <span className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg text-sm font-medium">
-                            Awaiting Approval
-                          </span>
+                          <div className="flex items-center gap-2 justify-center">
+                            <span className="px-3 py-2 bg-yellow-100 text-yellow-700 btn-parallelogram text-xs font-medium">
+                              Awaiting Approval
+                            </span>
+                            <button
+                              onClick={() => handleDelete(contractor.id, contractor.name)}
+                              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </div>
                         ) : (
                           <button
                             onClick={() =>
@@ -485,16 +549,56 @@ export default function ContractorsPage() {
                                 `/dashboard/contractors/${contractor.id}/review`
                               )
                             }
-                            className="px-4 py-2 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white rounded-lg transition-all text-sm font-medium flex items-center gap-2 mx-auto"
+                            className="px-4 py-2 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2 mx-auto"
                           >
                             Review & Approve
                             <ArrowRight size={16} />
                           </button>
                         )
+                      ) : contractor.status === "awaiting_work_order_approval" ? (
+                        user?.role === "consultant" ? (
+                          <span className="px-4 py-2 bg-amber-100 text-amber-700 btn-parallelogram text-sm font-medium">
+                            Work Order Pending Approval
+                          </span>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/contractors/${contractor.id}/work-order-review`
+                              )
+                            }
+                            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2 mx-auto"
+                          >
+                            Review Work Order
+                            <ArrowRight size={16} />
+                          </button>
+                        )
+                      ) : contractor.status === "approved" ? (
+                        user?.role === "consultant" ? (
+                          <button
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/contractors/${contractor.id}/generate-contract`
+                              )
+                            }
+                            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2 mx-auto"
+                          >
+                            Send Contract
+                            <ArrowRight size={16} />
+                          </button>
+                        ) : (
+                          <span className="px-4 py-2 bg-green-100 text-green-700 btn-parallelogram text-sm font-medium">
+                            Approved
+                          </span>
+                        )
+                      ) : contractor.status === "rejected" ? (
+                        <span className="px-4 py-2 bg-red-100 text-red-700 btn-parallelogram text-sm font-medium">
+                          Rejected
+                        </span>
                       ) : contractor.status === "pending_signature" || contractor.status === "draft" ? (
                         <button
                           onClick={() => handleDelete(contractor.id, contractor.name)}
-                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-all text-sm font-medium"
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-sm font-medium"
                         >
                           Delete
                         </button>
@@ -526,14 +630,14 @@ export default function ContractorsPage() {
                               }
                             }
                           }}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-all text-sm font-medium"
+                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white btn-parallelogram transition-all text-sm font-medium"
                         >
                           Activate
                         </button>
                       ) : (
                         <button
                           onClick={() => router.push(`/dashboard/contractors/${contractor.id}`)}
-                          className="px-4 py-2 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white rounded-lg transition-all text-sm font-medium"
+                          className="px-4 py-2 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white btn-parallelogram transition-all text-sm font-medium"
                         >
                           Manage
                         </button>
