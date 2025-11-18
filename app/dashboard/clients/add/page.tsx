@@ -14,13 +14,7 @@ import {
   X,
   CheckCircle,
   FileText,
-  Mail,
-  Phone,
-  MapPin,
-  Globe,
-  Briefcase,
   DollarSign,
-  Clock,
 } from "lucide-react";
 
 interface DocumentToUpload {
@@ -53,12 +47,6 @@ export default function AddClientPage() {
     website: "",
     notes: "",
     is_active: true,
-    // Workflow Configuration
-    work_order_applicable: false,
-    proposal_applicable: false,
-    // Timesheet Configuration
-    timesheet_required: false,
-    timesheet_approver_name: "",
     // Payment Terms
     po_required: false,
     po_number: "",
@@ -707,101 +695,6 @@ export default function AddClientPage() {
               } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
               placeholder="Any additional notes about this client..."
             />
-          </div>
-
-          {/* Workflow Configuration */}
-          <div className="mb-6">
-            <div
-              className="relative px-6 py-2 bg-[#FF6B00] text-white font-semibold text-lg flex items-center gap-3 w-fit"
-              style={{
-                clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%)",
-              }}
-            >
-              <Briefcase size={20} className="text-white" />
-              <span>Workflow Configuration</span>
-            </div>
-            <div className="w-full h-[2px] bg-[#FF6B00] ml-[12px]"></div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="work_order_applicable"
-                  checked={formData.work_order_applicable}
-                  onChange={(e) => setFormData(prev => ({ ...prev, work_order_applicable: e.target.checked }))}
-                  className="w-5 h-5 text-[#FF6B00] rounded focus:ring-[#FF6B00]"
-                />
-                <div>
-                  <span className="text-sm font-medium text-gray-300">Work Order Applicable</span>
-                  <p className="text-xs text-gray-500">Require work orders for this client</p>
-                </div>
-              </label>
-            </div>
-
-            <div>
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  name="proposal_applicable"
-                  checked={formData.proposal_applicable}
-                  onChange={(e) => setFormData(prev => ({ ...prev, proposal_applicable: e.target.checked }))}
-                  className="w-5 h-5 text-[#FF6B00] rounded focus:ring-[#FF6B00]"
-                />
-                <div>
-                  <span className="text-sm font-medium text-gray-300">Proposal Applicable</span>
-                  <p className="text-xs text-gray-500">Require proposals for this client</p>
-                </div>
-              </label>
-            </div>
-          </div>
-
-          {/* Timesheet Configuration */}
-          <div className="mb-6">
-            <div
-              className="relative px-6 py-2 bg-[#FF6B00] text-white font-semibold text-lg flex items-center gap-3 w-fit"
-              style={{
-                clipPath: "polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%)",
-              }}
-            >
-              <Clock size={20} className="text-white" />
-              <span>Timesheet Configuration</span>
-            </div>
-            <div className="w-full h-[2px] bg-[#FF6B00] ml-[12px]"></div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="flex items-center gap-3 cursor-pointer mb-4">
-                <input
-                  type="checkbox"
-                  name="timesheet_required"
-                  checked={formData.timesheet_required}
-                  onChange={(e) => setFormData(prev => ({ ...prev, timesheet_required: e.target.checked }))}
-                  className="w-5 h-5 text-[#FF6B00] rounded focus:ring-[#FF6B00]"
-                />
-                <span className="text-sm font-medium text-gray-300">Timesheet Required</span>
-              </label>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-400 mb-2">
-                Timesheet Approver Name
-              </label>
-              <input
-                type="text"
-                name="timesheet_approver_name"
-                value={formData.timesheet_approver_name}
-                onChange={handleInputChange}
-                className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
-                  theme === "dark"
-                    ? "bg-gray-800 border-gray-700 text-white"
-                    : "bg-white border-gray-300 text-gray-900"
-                } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                placeholder="Approver name"
-              />
-            </div>
           </div>
 
           {/* Payment Terms */}
