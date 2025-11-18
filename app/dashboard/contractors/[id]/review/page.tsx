@@ -292,9 +292,9 @@ export default function ReviewContractorPage() {
           </div>
         )}
 
-        {/* 2-Column Grid Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Left Column */}
+        {/* 3-Column Grid Layout */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {/* Column 1 */}
           <div className="space-y-4">
             {/* Contact & Personal Information */}
             <div className="bg-white rounded-xl p-4 shadow-sm">
@@ -323,7 +323,10 @@ export default function ReviewContractorPage() {
                 <ListItem icon={Clock} label="Duration" value={contractor.duration} />
               </div>
             </div>
+          </div>
 
+          {/* Column 2 */}
+          <div className="space-y-4">
             {/* Management Company */}
             <div className="bg-white rounded-xl p-4 shadow-sm">
               <SectionHeader title="Management Company" icon={Building2} />
@@ -413,7 +416,7 @@ export default function ReviewContractorPage() {
             )}
           </div>
 
-          {/* Right Column */}
+          {/* Column 3 */}
           <div className="space-y-4">
             {/* Aventus Deal */}
             <div className="bg-white rounded-xl p-4 shadow-sm">
