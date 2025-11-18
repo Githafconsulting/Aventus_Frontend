@@ -85,7 +85,7 @@ export default function ContractorsPage() {
 
         // Transform backend data to frontend format
         const transformedContractors = data.map((c: any) => {
-          // Count uploaded documents
+          // Count uploaded documents (only count non-null, non-empty strings)
           const uploadedDocs = [
             c.passport_document,
             c.photo_document,
@@ -94,8 +94,8 @@ export default function ContractorsPage() {
             c.id_back_document,
             c.emirates_id_document,
             c.degree_document,
-            c.third_party_document  // Add third party quote sheet
-          ].filter(Boolean).length;
+            c.third_party_document
+          ].filter(doc => doc && doc !== '' && doc !== null).length;
 
           // Check if contractor has other documents
           const otherDocsCount = c.other_documents ? (Array.isArray(c.other_documents) ? c.other_documents.length : 0) : 0;
