@@ -98,10 +98,10 @@ export default function QuoteSheetUploadPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0F0F0F]">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-[#FF6B00] mx-auto mb-4"></div>
-          <p className="text-white text-lg">Loading...</p>
+          <p className="text-gray-900 text-lg">Loading...</p>
         </div>
       </div>
     );
@@ -109,15 +109,15 @@ export default function QuoteSheetUploadPage() {
 
   if (error && !quoteSheetInfo) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0F0F0F]">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
           <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-10 h-10 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Invalid Link</h1>
-          <p className="text-gray-400">{error}</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Invalid Link</h1>
+          <p className="text-gray-600">{error}</p>
         </div>
       </div>
     );
@@ -125,23 +125,23 @@ export default function QuoteSheetUploadPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0F0F0F]">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
           <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <svg className="w-10 h-10 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-white mb-2">Upload Successful!</h1>
-          <p className="text-gray-400">Your quote sheet has been submitted successfully.</p>
-          <p className="text-gray-400 mt-2">You can now close this window.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Upload Successful!</h1>
+          <p className="text-gray-600">Your quote sheet has been submitted successfully.</p>
+          <p className="text-gray-600 mt-2">You can now close this window.</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#0A0A0A] via-[#1A1A1A] to-[#0F0F0F] py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
@@ -154,35 +154,35 @@ export default function QuoteSheetUploadPage() {
               className="object-contain"
             />
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Quote Sheet Upload</h1>
-          <p className="text-gray-400">Upload your quote sheet for contractor placement</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Quote Sheet Upload</h1>
+          <p className="text-gray-600">Upload your quote sheet for contractor placement</p>
         </div>
 
         {/* Quote Sheet Info Card */}
         <div
-          className="mb-8 p-6 bg-gradient-to-br from-[#FF6B00]/10 to-[#FF8C00]/5 border border-[#FF6B00]/20"
+          className="mb-8 p-6 bg-gradient-to-br from-[#FF6B00]/10 to-[#FF8C00]/5 border border-[#FF6B00]/30"
           style={{
             clipPath: "polygon(0 0, calc(100% - 20px) 0, 100% 20px, 100% 100%, 20px 100%, 0 calc(100% - 20px))",
           }}
         >
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-gray-400 text-sm mb-1">Contractor Name</p>
-              <p className="text-white font-semibold">{quoteSheetInfo?.contractor_name}</p>
+              <p className="text-gray-600 text-sm mb-1">Contractor Name</p>
+              <p className="text-gray-900 font-semibold">{quoteSheetInfo?.contractor_name}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-sm mb-1">Your Company</p>
-              <p className="text-white font-semibold">{quoteSheetInfo?.third_party_company_name}</p>
+              <p className="text-gray-600 text-sm mb-1">Your Company</p>
+              <p className="text-gray-900 font-semibold">{quoteSheetInfo?.third_party_company_name}</p>
             </div>
             <div>
-              <p className="text-gray-400 text-sm mb-1">Request Date</p>
-              <p className="text-white font-semibold">
+              <p className="text-gray-600 text-sm mb-1">Request Date</p>
+              <p className="text-gray-900 font-semibold">
                 {new Date(quoteSheetInfo?.created_at).toLocaleDateString()}
               </p>
             </div>
             <div>
-              <p className="text-gray-400 text-sm mb-1">Link Expires</p>
-              <p className="text-white font-semibold">
+              <p className="text-gray-600 text-sm mb-1">Link Expires</p>
+              <p className="text-gray-900 font-semibold">
                 {new Date(quoteSheetInfo?.token_expiry).toLocaleDateString()}
               </p>
             </div>
@@ -191,7 +191,7 @@ export default function QuoteSheetUploadPage() {
 
         {/* Upload Form */}
         <div
-          className="p-8 bg-[#1A1A1A] border border-gray-800"
+          className="p-8 bg-white border border-gray-200 shadow-lg"
           style={{
             clipPath: "polygon(0 0, calc(100% - 30px) 0, 100% 30px, 100% 100%, 30px 100%, 0 calc(100% - 30px))",
           }}
@@ -199,11 +199,11 @@ export default function QuoteSheetUploadPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* File Upload */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
                 Quote Sheet Document <span className="text-red-500">*</span>
               </label>
               <div
-                className="border-2 border-dashed border-gray-700 hover:border-[#FF6B00]/50 transition-all p-6 text-center bg-[#0F0F0F]"
+                className="border-2 border-dashed border-gray-300 hover:border-[#FF6B00]/50 transition-all p-6 text-center bg-gray-50"
                 style={{
                   clipPath: "polygon(0 0, calc(100% - 15px) 0, 100% 15px, 100% 100%, 15px 100%, 0 calc(100% - 15px))",
                 }}
@@ -217,7 +217,7 @@ export default function QuoteSheetUploadPage() {
                 />
                 <label htmlFor="file-upload" className="cursor-pointer">
                   <svg
-                    className="mx-auto h-12 w-12 text-gray-500 mb-3"
+                    className="mx-auto h-12 w-12 text-gray-400 mb-3"
                     stroke="currentColor"
                     fill="none"
                     viewBox="0 0 48 48"
@@ -229,7 +229,7 @@ export default function QuoteSheetUploadPage() {
                       strokeLinejoin="round"
                     />
                   </svg>
-                  <div className="text-sm text-gray-400">
+                  <div className="text-sm text-gray-600">
                     {file ? (
                       <span className="text-[#FF6B00] font-medium">{file.name}</span>
                     ) : (
@@ -246,12 +246,12 @@ export default function QuoteSheetUploadPage() {
             {/* Proposed Rate */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-300 mb-2">Proposed Rate</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Proposed Rate</label>
                 <input
                   type="number"
                   value={proposedRate}
                   onChange={(e) => setProposedRate(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#0F0F0F] border border-gray-700 text-white focus:outline-none focus:border-[#FF6B00] transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 focus:outline-none focus:border-[#FF6B00] transition-colors"
                   style={{
                     clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
                   }}
@@ -260,11 +260,11 @@ export default function QuoteSheetUploadPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Currency</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value)}
-                  className="w-full px-4 py-3 bg-[#0F0F0F] border border-gray-700 text-white focus:outline-none focus:border-[#FF6B00] transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 focus:outline-none focus:border-[#FF6B00] transition-colors"
                   style={{
                     clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
                   }}
@@ -280,12 +280,12 @@ export default function QuoteSheetUploadPage() {
 
             {/* Payment Terms */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Payment Terms</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Payment Terms</label>
               <input
                 type="text"
                 value={paymentTerms}
                 onChange={(e) => setPaymentTerms(e.target.value)}
-                className="w-full px-4 py-3 bg-[#0F0F0F] border border-gray-700 text-white focus:outline-none focus:border-[#FF6B00] transition-colors"
+                className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 focus:outline-none focus:border-[#FF6B00] transition-colors"
                 style={{
                   clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
                 }}
@@ -295,12 +295,12 @@ export default function QuoteSheetUploadPage() {
 
             {/* Notes */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">Additional Notes</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Additional Notes</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 rows={4}
-                className="w-full px-4 py-3 bg-[#0F0F0F] border border-gray-700 text-white focus:outline-none focus:border-[#FF6B00] transition-colors resize-none"
+                className="w-full px-4 py-3 bg-white border border-gray-300 text-gray-900 focus:outline-none focus:border-[#FF6B00] transition-colors resize-none"
                 style={{
                   clipPath: "polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px))",
                 }}
@@ -310,7 +310,7 @@ export default function QuoteSheetUploadPage() {
 
             {/* Error Message */}
             {error && (
-              <div className="p-4 bg-red-500/10 border border-red-500/30 text-red-400 text-sm">
+              <div className="p-4 bg-red-50 border border-red-300 text-red-700 text-sm rounded">
                 {error}
               </div>
             )}
@@ -342,7 +342,7 @@ export default function QuoteSheetUploadPage() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-sm text-gray-500">
+        <div className="mt-8 text-center text-sm text-gray-600">
           <p>This is a secure upload link provided by Aventus</p>
           <p className="mt-1">If you have any questions, please contact your Aventus consultant</p>
         </div>

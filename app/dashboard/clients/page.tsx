@@ -16,6 +16,7 @@ import {
   XCircle,
   Edit2,
   Trash2,
+  Eye,
 } from "lucide-react";
 
 interface Client {
@@ -338,7 +339,7 @@ export default function ClientsPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className={`divide-y ${theme === "dark" ? "divide-gray-800" : "divide-gray-200"}`}>
                 {filteredClients.map((client) => (
                   <tr
                     key={client.id}
@@ -430,6 +431,13 @@ export default function ClientsPage() {
                     {/* Actions */}
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => router.push(`/dashboard/clients/${client.id}`)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 btn-parallelogram bg-green-500/10 hover:bg-green-500/20 text-green-500 transition-all text-sm font-medium"
+                        >
+                          <Eye size={14} />
+                          View
+                        </button>
                         <button
                           onClick={() => router.push(`/dashboard/clients/edit/${client.id}`)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 btn-parallelogram bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-all text-sm font-medium"

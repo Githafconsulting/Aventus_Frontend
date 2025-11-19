@@ -221,21 +221,6 @@ const consultantMenuItems = [
     href: "/dashboard/contractors",
   },
   {
-    title: "Quote Sheets",
-    icon: ClipboardList,
-    href: "/dashboard/quote-sheets",
-  },
-  {
-    title: "Proposals",
-    icon: Send,
-    href: "/dashboard/proposals",
-  },
-  {
-    title: "Work Orders",
-    icon: Briefcase,
-    href: "/dashboard/work-orders",
-  },
-  {
     title: "Clients",
     icon: Building,
     href: "/dashboard/clients",

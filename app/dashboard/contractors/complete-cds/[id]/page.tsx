@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ArrowLeft, User, Building, Briefcase, DollarSign, FileText, CreditCard } from "lucide-react";
+import { API_ENDPOINTS } from "@/lib/config";
 
 export default function CompleteCDSPage() {
   const { theme } = useTheme();
@@ -25,6 +26,8 @@ export default function CompleteCDSPage() {
     surname: "",
     gender: "Male",
     nationality: "",
+    country: "",
+    currentLocation: "",
     homeAddress: "",
     addressLine3: "",
     addressLine4: "",
@@ -46,6 +49,7 @@ export default function CompleteCDSPage() {
     companyRegNo: "",
 
     // Placement Details (partially pre-filled)
+    clientId: "",
     clientName: "",
     projectName: "",
     role: "",
@@ -84,6 +88,10 @@ export default function CompleteCDSPage() {
     securityDeposit: "",
     laptopProvider: "client",
     otherNotes: "",
+
+    // Summary Calculations
+    contractorTotalFixedCosts: "",
+    estimatedMonthlyGP: "",
 
     // Aventus Deal
     consultant: "",
@@ -146,7 +154,7 @@ export default function CompleteCDSPage() {
         const contractor = await response.json();
 
         // Check if contractor has uploaded documents (ready for CDS)
-        if (contractor.status !== "documents_uploaded" && contractor.status !== "pending_review") {
+        if (contractor.status !== "documents_uploaded" && contractor.status !== "pending_review" && contractor.status !== "pending_cds_cs") {
           alert("Contractor must have uploaded documents before completing CDS.");
           router.push("/dashboard/contractors");
           return;
@@ -159,6 +167,8 @@ export default function CompleteCDSPage() {
           surname: contractor.surname || "",
           gender: contractor.gender || "Male",
           nationality: contractor.nationality || "",
+          country: contractor.country || "",
+          currentLocation: contractor.current_location || "",
           homeAddress: contractor.home_address || "",
           addressLine3: contractor.address_line3 || "",
           addressLine4: contractor.address_line4 || "",
@@ -180,6 +190,7 @@ export default function CompleteCDSPage() {
           companyRegNo: contractor.company_reg_no || "",
 
           // Placement Details
+          clientId: contractor.client_id || "",
           clientName: contractor.client_name || "",
           projectName: contractor.project_name || "",
           role: contractor.role || "",
@@ -219,8 +230,12 @@ export default function CompleteCDSPage() {
           laptopProvider: contractor.laptop_provider || "client",
           otherNotes: contractor.other_notes || "",
 
-          // Aventus Deal
-          consultant: contractor.consultant || "",
+          // Summary Calculations
+          contractorTotalFixedCosts: contractor.contractor_total_fixed_costs || "",
+          estimatedMonthlyGP: contractor.estimated_monthly_gp || "",
+
+          // Aventus Deal (auto-fill consultant from consultant_name if available)
+          consultant: contractor.consultant || contractor.consultant_name || "",
           anySplits: contractor.any_splits || "",
           resourcer: contractor.resourcer || "",
 
@@ -290,18 +305,29 @@ export default function CompleteCDSPage() {
   useEffect(() => {
     const loadClients = async () => {
       try {
-        // TODO: Replace with actual API endpoint when backend is ready
-        // const token = localStorage.getItem("aventus-auth-token");
-        // const response = await fetch("http://localhost:8000/api/v1/clients", {
-        //   headers: {
-        //     Authorization: `Bearer ${token}`,
-        //   },
-        // });
-        // const data = await response.json();
-        // setClients(data);
+        const token = localStorage.getItem("aventus-auth-token");
+        if (!token) return;
 
-        // For now, set empty array until backend API is implemented
-        setClients([]);
+        const response = await fetch(API_ENDPOINTS.clients, {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setClients(data);
+
+          // If contractor has a saved clientId, set the selectedClient
+          if (formData.clientId) {
+            const client = data.find((c: any) => c.id === formData.clientId);
+            if (client) {
+              setSelectedClient(client);
+            }
+          }
+        } else {
+          setClients([]);
+        }
       } catch (error) {
         console.error("Error loading clients:", error);
         setClients([]);
@@ -309,61 +335,107 @@ export default function CompleteCDSPage() {
     };
 
     loadClients();
-  }, []);
+  }, [formData.clientId]);
 
-  const handleClientProjectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (value) {
-      const [clientName, projectName] = value.split(' | ');
-      setFormData({
-        ...formData,
-        clientName,
-        projectName,
-      });
-    } else {
-      setFormData({
-        ...formData,
-        clientName: "",
-        projectName: "",
-      });
-    }
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
 
-    // If business type changes to Freelancer or Aventus WPS, clear management company fields
-    if (name === "businessType" && (value === "Freelancer" || value === "Aventus WPS")) {
-      setFormData({
-        ...formData,
-        businessType: value,
-        thirdPartyId: "",
-        umbrellaCompanyName: "",
-        registeredAddress: "",
-        companyVATNo: "",
-        companyName: "",
-        accountNumber: "",
-        ibanNumber: "",
-        companyRegNo: "",
-      });
-      return;
-    }
-
     // If third party is selected, auto-fill management company fields
-    if (name === "thirdPartyId" && value) {
-      const selectedThirdParty = thirdParties.find(tp => tp.id === value);
-      if (selectedThirdParty) {
+    if (name === "thirdPartyId") {
+      if (value) {
+        const selectedThirdParty = thirdParties.find(tp => tp.id === value);
+        if (selectedThirdParty) {
+          setFormData({
+            ...formData,
+            thirdPartyId: value,
+            umbrellaCompanyName: selectedThirdParty.company_name || "",
+            registeredAddress: selectedThirdParty.address_line1 || "",
+            managementAddressLine2: selectedThirdParty.address_line2 || "",
+            managementAddressLine3: selectedThirdParty.address_line3 || "",
+            companyVATNo: selectedThirdParty.company_vat_no || "",
+            companyName: selectedThirdParty.company_name || "",
+            accountNumber: selectedThirdParty.account_number || "",
+            ibanNumber: selectedThirdParty.iban_number || "",
+            companyRegNo: selectedThirdParty.company_reg_no || "",
+          });
+          return;
+        }
+      } else {
+        // If cleared, reset all management company fields
         setFormData({
           ...formData,
-          thirdPartyId: value,
-          umbrellaCompanyName: selectedThirdParty.company_name || "",
-          registeredAddress: selectedThirdParty.registered_address || "",
-          companyVATNo: selectedThirdParty.company_vat_no || "",
-          companyName: selectedThirdParty.company_name || "",
-          accountNumber: selectedThirdParty.account_number || "",
-          ibanNumber: selectedThirdParty.iban_number || "",
-          companyRegNo: selectedThirdParty.company_reg_no || "",
+          thirdPartyId: "",
+          umbrellaCompanyName: "",
+          registeredAddress: "",
+          managementAddressLine2: "",
+          managementAddressLine3: "",
+          companyVATNo: "",
+          companyName: "",
+          accountNumber: "",
+          ibanNumber: "",
+          companyRegNo: "",
         });
+        return;
+      }
+    }
+
+    // If client is selected, update client name, reset project, and auto-fill invoice details
+    if (name === "clientId") {
+      if (value) {
+        const selectedClient = clients.find(c => c.id === value);
+        if (selectedClient) {
+          setFormData({
+            ...formData,
+            clientId: value,
+            clientName: selectedClient.company_name || "",
+            projectName: "", // Reset project when client changes
+            // Auto-fill invoice details from client
+            timesheetRequired: selectedClient.timesheet_required ? "Yes" : "No",
+            timesheetApproverName: selectedClient.timesheet_approver_name || "",
+            invoiceEmail: selectedClient.contact_person_email || "",
+            clientContact: selectedClient.contact_person_name || "",
+            invoiceAddressLine1: selectedClient.address_line1 || "",
+            invoiceAddressLine2: selectedClient.address_line2 || "",
+            invoiceAddressLine3: selectedClient.address_line3 || "",
+            invoiceAddressLine4: selectedClient.address_line4 || "",
+            contractorPayFrequency: selectedClient.contractor_pay_frequency || "monthly",
+            clientInvoiceFrequency: selectedClient.client_invoice_frequency || "monthly",
+            clientPaymentTerms: selectedClient.client_payment_terms || "",
+            invoicingPreferences: selectedClient.invoicing_preferences || "per worker",
+            invoiceInstructions: selectedClient.invoice_instructions || "",
+            supportingDocsRequired: selectedClient.supporting_documents_required && selectedClient.supporting_documents_required.length > 0 ? "Yes" : "No",
+            poRequired: selectedClient.po_required ? "Yes" : "No",
+            poNumber: selectedClient.po_number || "",
+          });
+          setSelectedClient(selectedClient);
+          return;
+        }
+      } else {
+        // If cleared, reset client, project, and invoice details
+        setFormData({
+          ...formData,
+          clientId: "",
+          clientName: "",
+          projectName: "",
+          timesheetRequired: "No",
+          timesheetApproverName: "",
+          invoiceEmail: "",
+          clientContact: "",
+          invoiceAddressLine1: "",
+          invoiceAddressLine2: "",
+          invoiceAddressLine3: "",
+          invoiceAddressLine4: "",
+          contractorPayFrequency: "monthly",
+          clientInvoiceFrequency: "monthly",
+          clientPaymentTerms: "",
+          invoicingPreferences: "per worker",
+          invoiceInstructions: "",
+          supportingDocsRequired: "No",
+          poRequired: "No",
+          poNumber: "",
+        });
+        setSelectedClient(null);
         return;
       }
     }
@@ -581,6 +653,38 @@ export default function CompleteCDSPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Country</label>
+                <input
+                  type="text"
+                  name="country"
+                  value={formData.country}
+                  onChange={handleChange}
+                  placeholder="Enter country"
+                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Current Location</label>
+                <input
+                  type="text"
+                  name="currentLocation"
+                  value={formData.currentLocation}
+                  onChange={handleChange}
+                  placeholder="City or region"
+                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                />
+              </div>
+
               <div className="md:col-span-2">
                 <label className="block text-sm font-medium text-gray-400 mb-2">Home Address</label>
                 <input
@@ -685,66 +789,30 @@ export default function CompleteCDSPage() {
               Management Company Details
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Route *</label>
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-400 mb-2">Umbrella Company (Third Party)</label>
                 <select
-                  name="businessType"
-                  value={formData.businessType}
+                  name="thirdPartyId"
+                  value={formData.thirdPartyId}
                   onChange={handleChange}
-                  required
                   className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
                     theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
                   } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
                 >
-                  <option value="">Select Route</option>
-                  <option value="3RD Party">3RD Party</option>
-                  <option value="Freelancer">Freelancer</option>
-                  <option value="Aventus WPS">Aventus WPS</option>
+                  <option value="">Select Umbrella Company</option>
+                  {thirdParties.map((tp) => (
+                    <option key={tp.id} value={tp.id}>
+                      {tp.company_name}
+                    </option>
+                  ))}
                 </select>
-              </div>
-
-              {formData.businessType === "3RD Party" && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-400 mb-2">Third Party Company *</label>
-                  <select
-                    name="thirdPartyId"
-                    value={formData.thirdPartyId}
-                    onChange={handleChange}
-                    required
-                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                      theme === "dark"
-                        ? "bg-gray-800 border-gray-700 text-white"
-                        : "bg-white border-gray-300 text-gray-900"
-                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                  >
-                    <option value="">Select Third Party</option>
-                    {thirdParties.map((tp) => (
-                      <option key={tp.id} value={tp.id}>
-                        {tp.company_name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Umbrella Company Name</label>
-                <input
-                  type="text"
-                  name="umbrellaCompanyName"
-                  value={formData.umbrellaCompanyName}
-                  onChange={handleChange}
-                  readOnly={formData.businessType === "Freelancer" || formData.businessType === "Aventus WPS"}
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    formData.businessType === "Freelancer" || formData.businessType === "Aventus WPS"
-                      ? "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60"
-                      : theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                />
+                {formData.thirdPartyId && (
+                  <p className="text-xs text-gray-500 mt-2">
+                    The fields below are auto-filled from the selected third party company
+                  </p>
+                )}
               </div>
 
               <div>
@@ -754,46 +822,12 @@ export default function CompleteCDSPage() {
                   name="companyName"
                   value={formData.companyName}
                   onChange={handleChange}
-                  readOnly={formData.businessType === "Aventus WPS"}
+                  readOnly={!!formData.thirdPartyId}
                   className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    formData.businessType === "Aventus WPS"
-                      ? "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60"
-                      : theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-400 mb-2">Registered Address</label>
-                <input
-                  type="text"
-                  name="registeredAddress"
-                  value={formData.registeredAddress}
-                  onChange={handleChange}
-                  readOnly={formData.businessType === "Aventus WPS"}
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    formData.businessType === "Aventus WPS"
-                      ? "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60"
-                      : theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">Company VAT Number</label>
-                <input
-                  type="text"
-                  name="companyVATNo"
-                  value={formData.companyVATNo}
-                  onChange={handleChange}
-                  readOnly={formData.businessType === "Aventus WPS"}
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    formData.businessType === "Aventus WPS"
-                      ? "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60"
+                    formData.thirdPartyId
+                      ? theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 border-gray-300 text-gray-600 cursor-not-allowed opacity-60"
                       : theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
@@ -808,10 +842,92 @@ export default function CompleteCDSPage() {
                   name="companyRegNo"
                   value={formData.companyRegNo}
                   onChange={handleChange}
-                  readOnly={formData.businessType === "Aventus WPS"}
+                  readOnly={!!formData.thirdPartyId}
                   className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    formData.businessType === "Aventus WPS"
-                      ? "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60"
+                    formData.thirdPartyId
+                      ? theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 border-gray-300 text-gray-600 cursor-not-allowed opacity-60"
+                      : theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="block text-sm font-medium text-gray-400 mb-2">Registered Address (Line 1)</label>
+                <input
+                  type="text"
+                  name="registeredAddress"
+                  value={formData.registeredAddress}
+                  onChange={handleChange}
+                  readOnly={!!formData.thirdPartyId}
+                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    formData.thirdPartyId
+                      ? theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 border-gray-300 text-gray-600 cursor-not-allowed opacity-60"
+                      : theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Address Line 2</label>
+                <input
+                  type="text"
+                  name="managementAddressLine2"
+                  value={formData.managementAddressLine2}
+                  onChange={handleChange}
+                  readOnly={!!formData.thirdPartyId}
+                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    formData.thirdPartyId
+                      ? theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 border-gray-300 text-gray-600 cursor-not-allowed opacity-60"
+                      : theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Address Line 3</label>
+                <input
+                  type="text"
+                  name="managementAddressLine3"
+                  value={formData.managementAddressLine3}
+                  onChange={handleChange}
+                  readOnly={!!formData.thirdPartyId}
+                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    formData.thirdPartyId
+                      ? theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 border-gray-300 text-gray-600 cursor-not-allowed opacity-60"
+                      : theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Company VAT Number</label>
+                <input
+                  type="text"
+                  name="companyVATNo"
+                  value={formData.companyVATNo}
+                  onChange={handleChange}
+                  readOnly={!!formData.thirdPartyId}
+                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    formData.thirdPartyId
+                      ? theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 border-gray-300 text-gray-600 cursor-not-allowed opacity-60"
                       : theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
@@ -826,10 +942,12 @@ export default function CompleteCDSPage() {
                   name="accountNumber"
                   value={formData.accountNumber}
                   onChange={handleChange}
-                  readOnly={formData.businessType === "Aventus WPS"}
+                  readOnly={!!formData.thirdPartyId}
                   className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    formData.businessType === "Aventus WPS"
-                      ? "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60"
+                    formData.thirdPartyId
+                      ? theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 border-gray-300 text-gray-600 cursor-not-allowed opacity-60"
                       : theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
@@ -844,10 +962,12 @@ export default function CompleteCDSPage() {
                   name="ibanNumber"
                   value={formData.ibanNumber}
                   onChange={handleChange}
-                  readOnly={formData.businessType === "Aventus WPS"}
+                  readOnly={!!formData.thirdPartyId}
                   className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    formData.businessType === "Aventus WPS"
-                      ? "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60"
+                    formData.thirdPartyId
+                      ? theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-gray-400 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 border-gray-300 text-gray-600 cursor-not-allowed opacity-60"
                       : theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
@@ -865,11 +985,12 @@ export default function CompleteCDSPage() {
               Placement Details
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-400 mb-2">Client & Project *</label>
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Client *</label>
                 <select
-                  value={formData.clientName && formData.projectName ? `${formData.clientName} | ${formData.projectName}` : ""}
-                  onChange={handleClientProjectChange}
+                  name="clientId"
+                  value={formData.clientId}
+                  onChange={handleChange}
                   required
                   className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
                     theme === "dark"
@@ -877,18 +998,43 @@ export default function CompleteCDSPage() {
                       : "bg-white border-gray-300 text-gray-900"
                   } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
                 >
-                  <option value="">Select Client & Project</option>
-                  {clients.map((client) =>
-                    client.projects.map((project: string, index: number) => (
-                      <option key={`${client.id}-${index}`} value={`${client.name} | ${project}`}>
-                        {client.name} - {project}
-                      </option>
-                    ))
-                  )}
+                  <option value="">Select Client</option>
+                  {clients.map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.company_name}
+                    </option>
+                  ))}
                 </select>
-                {formData.clientName && formData.projectName && (
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">Project *</label>
+                <select
+                  name="projectName"
+                  value={formData.projectName}
+                  onChange={handleChange}
+                  required
+                  disabled={!formData.clientId}
+                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    !formData.clientId
+                      ? theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-gray-500 cursor-not-allowed opacity-60"
+                        : "bg-gray-50 border-gray-300 text-gray-400 cursor-not-allowed opacity-60"
+                      : theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                >
+                  <option value="">Select Project</option>
+                  {selectedClient?.projects?.map((project: any, index: number) => (
+                    <option key={index} value={project.name}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+                {!formData.clientId && (
                   <p className="text-xs text-gray-500 mt-2">
-                    Client: <span className="font-semibold">{formData.clientName}</span> | Project: <span className="font-semibold">{formData.projectName}</span>
+                    Please select a client first
                   </p>
                 )}
               </div>
@@ -1275,6 +1421,46 @@ export default function CompleteCDSPage() {
                       : "bg-white border-gray-300 text-gray-900"
                   } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
                 />
+              </div>
+            </div>
+
+            {/* Summary Fields */}
+            <div className="mt-8 pt-6 border-t border-gray-700">
+              <h3 className={`text-lg font-semibold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                Summary
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Contractor Total Fixed Costs (Monthly)</label>
+                  <input
+                    type="number"
+                    name="contractorTotalFixedCosts"
+                    value={formData.contractorTotalFixedCosts}
+                    onChange={handleChange}
+                    placeholder="Total monthly fixed costs"
+                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                      theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">Estimated Monthly GP (Gross Profit)</label>
+                  <input
+                    type="number"
+                    name="estimatedMonthlyGP"
+                    value={formData.estimatedMonthlyGP}
+                    onChange={handleChange}
+                    placeholder="Estimated monthly gross profit"
+                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                      theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                  />
+                </div>
               </div>
             </div>
           </div>

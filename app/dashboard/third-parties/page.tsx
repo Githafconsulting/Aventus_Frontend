@@ -19,6 +19,7 @@ import {
   CheckCircle,
   XCircle,
   FileText,
+  Eye,
 } from "lucide-react";
 
 interface ThirdParty {
@@ -324,7 +325,7 @@ export default function ThirdPartiesPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className={`divide-y ${theme === "dark" ? "divide-gray-800" : "divide-gray-200"}`}>
                 {filteredThirdParties.map((tp) => (
                   <tr
                     key={tp.id}
@@ -427,6 +428,13 @@ export default function ThirdPartiesPage() {
                     {/* Actions */}
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => router.push(`/dashboard/third-parties/${tp.id}`)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-green-500/10 hover:bg-green-500/20 text-green-500 transition-all text-sm font-medium"
+                        >
+                          <Eye size={14} />
+                          View
+                        </button>
                         <button
                           onClick={() => router.push(`/dashboard/third-parties/edit/${tp.id}`)}
                           className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-500 transition-all text-sm font-medium"

@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_ENDPOINTS } from "@/lib/config";
-import { ArrowLeft, Building2, Users, FileText, Mail, Send } from "lucide-react";
+import { ArrowLeft, Building2, Users, FileText, Mail, Send, Globe, MapPin, Briefcase, CheckCircle2 } from "lucide-react";
 
 interface ThirdParty {
   id: string;
@@ -14,6 +14,9 @@ interface ThirdParty {
   contact_person_name: string;
   contact_person_email: string;
 }
+
+type RouteType = "WPS" | "FREELANCER" | "UAE" | "SAUDI" | "OFFSHORE";
+type SubRouteType = "DIRECT" | "THIRD_PARTY";
 
 export default function SelectRoutePage() {
   const { theme } = useTheme();
@@ -25,7 +28,9 @@ export default function SelectRoutePage() {
   const [contractor, setContractor] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [selectedRoute, setSelectedRoute] = useState<"wps_freelancer" | "third_party" | null>(null);
+  const [selectedRoute, setSelectedRoute] = useState<RouteType | null>(null);
+  const [selectedSubRoute, setSelectedSubRoute] = useState<SubRouteType | null>(null);
+  const [showSubRouteSelection, setShowSubRouteSelection] = useState(false);
   const [showThirdPartyForm, setShowThirdPartyForm] = useState(false);
 
   // Third party form state
@@ -73,14 +78,17 @@ export default function SelectRoutePage() {
     }
   };
 
-  const handleRouteSelection = async (route: "wps_freelancer" | "third_party") => {
+  const handleRouteSelection = (route: RouteType) => {
     setSelectedRoute(route);
+    // All routes go directly without sub-options
+    submitRouteSelection(route, "DIRECT");
+  };
 
-    if (route === "third_party") {
-      // First, submit the route selection to save it in the database
-      await submitRouteSelection(route);
+  const handleSubRouteSelection = (subRoute: SubRouteType) => {
+    setSelectedSubRoute(subRoute);
 
-      // Then show the form with pre-filled email template
+    if (subRoute === "THIRD_PARTY") {
+      // Show third party form for email
       setShowThirdPartyForm(true);
       setEmailSubject(`Quote Request for ${contractor?.first_name} ${contractor?.surname}`);
       setEmailBody(`Dear Team,
@@ -97,35 +105,60 @@ Best regards,
 ${user?.name}
 Aventus Resources`);
     } else {
-      // WPS/Freelancer - directly select route and go to CDS
-      await submitRouteSelection(route);
+      // DIRECT route - submit and redirect
+      if (selectedRoute) {
+        submitRouteSelection(selectedRoute, subRoute);
+      }
     }
   };
 
-  const submitRouteSelection = async (route: "wps_freelancer" | "third_party") => {
+  const submitRouteSelection = async (route: RouteType, subRoute: SubRouteType) => {
+    console.log("=== SUBMIT ROUTE SELECTION ===");
+    console.log("Route:", route);
+    console.log("SubRoute:", subRoute);
+    console.log("Contractor ID:", contractorId);
+
     setSubmitting(true);
     try {
       const token = localStorage.getItem("aventus-auth-token");
-      const response = await fetch(`${API_ENDPOINTS.contractorById(contractorId)}/select-route`, {
+      const url = `${API_ENDPOINTS.contractorById(contractorId)}/select-route`;
+      const payload = {
+        route: route.toLowerCase(),
+        sub_route: subRoute.toLowerCase()
+      };
+
+      console.log("URL:", url);
+      console.log("Payload:", payload);
+      console.log("Token:", token ? "Present" : "Missing");
+
+      const response = await fetch(url, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ route }),
+        body: JSON.stringify(payload),
       });
 
+      console.log("Response status:", response.status);
+      const responseData = await response.json();
+      console.log("Response data:", responseData);
+
       if (response.ok) {
-        if (route === "wps_freelancer") {
-          // Redirect to CDS form
+        console.log("Success! Redirecting...");
+        // SAUDI routes to Quote Sheet, all others route to CDS Form
+        if (route === "SAUDI") {
+          router.push(`/dashboard/contractors/${contractorId}/quote-sheets`);
+        } else {
           router.push(`/dashboard/contractors/complete-cds/${contractorId}`);
         }
       } else {
-        alert("Failed to select route");
+        console.error("Failed:", responseData);
+        alert(`Failed to select route: ${responseData.detail || "Unknown error"}`);
       }
     } catch (error) {
       console.error("Error selecting route:", error);
-      alert("An error occurred");
+      alert("An error occurred: " + error);
     } finally {
       setSubmitting(false);
     }
@@ -142,6 +175,21 @@ Aventus Resources`);
     setSubmitting(true);
     try {
       const token = localStorage.getItem("aventus-auth-token");
+
+      // First save the route selection
+      await fetch(`${API_ENDPOINTS.contractorById(contractorId)}/select-route`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          route: selectedRoute?.toLowerCase(),
+          sub_route: "third_party"
+        }),
+      });
+
+      // Then send the third party request
       const response = await fetch(
         `${API_ENDPOINTS.contractorById(contractorId)}/send-third-party-request`,
         {
@@ -160,7 +208,12 @@ Aventus Resources`);
 
       if (response.ok) {
         alert("Third party request sent successfully!");
-        router.push("/dashboard/contractors");
+        // SAUDI routes to Quote Sheet, UAE routes to contractors list
+        if (selectedRoute === "SAUDI") {
+          router.push(`/dashboard/contractors/${contractorId}/quote-sheets`);
+        } else {
+          router.push("/dashboard/contractors");
+        }
       } else {
         alert("Failed to send third party request");
       }
@@ -181,6 +234,62 @@ Aventus Resources`);
       </DashboardLayout>
     );
   }
+
+  // Route configuration with icons and colors
+  const routeOptions = [
+    {
+      type: "WPS" as RouteType,
+      label: "WPS",
+      description: "Work Permit System",
+      icon: Briefcase,
+      color: "blue",
+      bgColor: "bg-blue-500/10",
+      textColor: "text-blue-500",
+      borderColor: "border-blue-500"
+    },
+    {
+      type: "FREELANCER" as RouteType,
+      label: "Freelancer",
+      description: "Independent Contractor",
+      icon: Users,
+      color: "purple",
+      bgColor: "bg-purple-500/10",
+      textColor: "text-purple-500",
+      borderColor: "border-purple-500"
+    },
+    {
+      type: "UAE" as RouteType,
+      label: "UAE",
+      description: "United Arab Emirates",
+      icon: MapPin,
+      color: "green",
+      bgColor: "bg-green-500/10",
+      textColor: "text-green-500",
+      borderColor: "border-green-500",
+      hasSubOptions: true
+    },
+    {
+      type: "SAUDI" as RouteType,
+      label: "Saudi Arabia",
+      description: "Kingdom of Saudi Arabia",
+      icon: Globe,
+      color: "orange",
+      bgColor: "bg-[#FF6B00]/10",
+      textColor: "text-[#FF6B00]",
+      borderColor: "border-[#FF6B00]",
+      hasSubOptions: true
+    },
+    {
+      type: "OFFSHORE" as RouteType,
+      label: "Offshore",
+      description: "International Placement",
+      icon: Building2,
+      color: "cyan",
+      bgColor: "bg-cyan-500/10",
+      textColor: "text-cyan-500",
+      borderColor: "border-cyan-500"
+    }
+  ];
 
   return (
     <DashboardLayout>
@@ -203,56 +312,84 @@ Aventus Resources`);
       </div>
 
       {!showThirdPartyForm ? (
-        /* Route Selection Cards */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-3xl">
-          {/* WPS/Freelancer Route */}
-          <div
-            onClick={() => handleRouteSelection("wps_freelancer")}
-            className={`${
-              theme === "dark" ? "bg-gray-900 hover:bg-gray-800" : "bg-white hover:bg-gray-50"
-            } card-parallelogram p-6 cursor-pointer transition-all border-2 ${
-              selectedRoute === "wps_freelancer"
-                ? "border-[#FF6B00]"
-                : theme === "dark"
-                ? "border-gray-700 hover:border-gray-600"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="flex items-center justify-center w-16 h-16 bg-blue-500/10 btn-parallelogram mb-3">
-                <Users className="text-blue-500" size={32} />
-              </div>
-
-              <h3 className={`text-xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                WPS / Freelancer
-              </h3>
+        !showSubRouteSelection ? (
+          /* Main Route Selection */
+          <div className="max-w-4xl">
+            <div className="flex flex-wrap gap-4">
+              {routeOptions.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <button
+                    key={option.type}
+                    onClick={() => handleRouteSelection(option.type)}
+                    className={`flex items-center gap-3 px-6 py-3 btn-parallelogram font-bold transition-all border-2 group ${
+                      selectedRoute === option.type
+                        ? "bg-[#FF6B00] text-white border-[#FF8C00] shadow-lg shadow-[#FF6B00]/30"
+                        : "bg-[#FF6B00]/10 hover:bg-[#FF6B00] text-black hover:text-white border-[#FF6B00]/30 hover:border-[#FF8C00]"
+                    } shadow-md hover:shadow-lg`}
+                  >
+                    <div className={`p-1.5 rounded ${selectedRoute === option.type ? 'bg-white/20' : 'bg-[#FF6B00]/20 group-hover:bg-white/20'}`}>
+                      <Icon size={20} className={selectedRoute === option.type ? 'text-white' : 'text-[#FF6B00] group-hover:text-white'} />
+                    </div>
+                    <span>{option.label}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
+        ) : (
+          /* Sub-Route Selection */
+          <div className="max-w-2xl">
+            <h2 className={`text-lg font-bold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+              {selectedRoute}
+            </h2>
 
-          {/* Third Party Route */}
-          <div
-            onClick={() => handleRouteSelection("third_party")}
-            className={`${
-              theme === "dark" ? "bg-gray-900 hover:bg-gray-800" : "bg-white hover:bg-gray-50"
-            } card-parallelogram p-6 cursor-pointer transition-all border-2 ${
-              selectedRoute === "third_party"
-                ? "border-[#FF6B00]"
-                : theme === "dark"
-                ? "border-gray-700 hover:border-gray-600"
-                : "border-gray-200 hover:border-gray-300"
-            }`}
-          >
-            <div className="flex flex-col items-center text-center">
-              <div className="flex items-center justify-center w-16 h-16 bg-[#FF6B00]/10 btn-parallelogram mb-3">
-                <Building2 className="text-[#FF6B00]" size={32} />
-              </div>
+            <div className="flex gap-4 mb-4">
+              <button
+                onClick={() => handleSubRouteSelection("DIRECT")}
+                className={`flex items-center gap-3 px-6 py-3 btn-parallelogram font-bold transition-all border-2 group ${
+                  selectedSubRoute === "DIRECT"
+                    ? "bg-[#FF6B00] text-white border-[#FF8C00] shadow-lg shadow-[#FF6B00]/30"
+                    : "bg-[#FF6B00]/10 hover:bg-[#FF6B00] text-black hover:text-white border-[#FF6B00]/30 hover:border-[#FF8C00]"
+                } shadow-md hover:shadow-lg`}
+              >
+                <div className={`p-1.5 rounded ${selectedSubRoute === "DIRECT" ? 'bg-white/20' : 'bg-[#FF6B00]/20 group-hover:bg-white/20'}`}>
+                  <CheckCircle2 size={20} className={selectedSubRoute === "DIRECT" ? 'text-white' : 'text-[#FF6B00] group-hover:text-white'} />
+                </div>
+                <span>Direct</span>
+              </button>
 
-              <h3 className={`text-xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-                Third Party
-              </h3>
+              <button
+                onClick={() => handleSubRouteSelection("THIRD_PARTY")}
+                className={`flex items-center gap-3 px-6 py-3 btn-parallelogram font-bold transition-all border-2 group ${
+                  selectedSubRoute === "THIRD_PARTY"
+                    ? "bg-[#FF6B00] text-white border-[#FF8C00] shadow-lg shadow-[#FF6B00]/30"
+                    : "bg-[#FF6B00]/10 hover:bg-[#FF6B00] text-black hover:text-white border-[#FF6B00]/30 hover:border-[#FF8C00]"
+                } shadow-md hover:shadow-lg`}
+              >
+                <div className={`p-1.5 rounded ${selectedSubRoute === "THIRD_PARTY" ? 'bg-white/20' : 'bg-[#FF6B00]/20 group-hover:bg-white/20'}`}>
+                  <Building2 size={20} className={selectedSubRoute === "THIRD_PARTY" ? 'text-white' : 'text-[#FF6B00] group-hover:text-white'} />
+                </div>
+                <span>Third Party</span>
+              </button>
             </div>
+
+            <button
+              onClick={() => {
+                setShowSubRouteSelection(false);
+                setSelectedRoute(null);
+                setSelectedSubRoute(null);
+              }}
+              className={`px-4 py-2 btn-parallelogram text-sm font-medium transition-all ${
+                theme === "dark"
+                  ? "bg-gray-800 hover:bg-gray-700 text-white"
+                  : "bg-gray-200 hover:bg-gray-300 text-gray-900"
+              }`}
+            >
+              Back
+            </button>
           </div>
-        </div>
+        )
       ) : (
         /* Third Party Email Form */
         <div className="max-w-2xl mx-auto">

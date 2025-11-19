@@ -42,6 +42,8 @@ export const API_ENDPOINTS = {
   contractorCostingSheet: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/costing-sheet`,
   contractorReview: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/approve`,
   contractorRecall: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/recall`,
+  contractorCancel: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/cancel`,
+  contractorDelete: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}`,
   contractorDocuments: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/documents`,
 
   // Document upload

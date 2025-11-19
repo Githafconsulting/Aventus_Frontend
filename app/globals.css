@@ -30,41 +30,35 @@ body {
   @apply bg-gray-600;
 }
 
-/* Parallelogram/Skewed Shapes */
+/* Standard rounded styles */
 @layer components {
-  /* Button Parallelogram - Small skew */
+  /* Buttons with standard rounded corners */
   .btn-parallelogram {
-    clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
-    position: relative;
+    @apply rounded-lg;
   }
 
-  /* Card/Container Parallelogram - Medium skew */
+  /* Cards with standard rounded corners */
   .card-parallelogram {
-    clip-path: polygon(12px 0, 100% 0, calc(100% - 12px) 100%, 0 100%);
-    position: relative;
+    @apply rounded-lg;
   }
 
-  /* Large Container Parallelogram */
+  /* Large containers with standard rounded corners */
   .container-parallelogram {
-    clip-path: polygon(16px 0, 100% 0, calc(100% - 16px) 100%, 0 100%);
-    position: relative;
+    @apply rounded-lg;
   }
 
-  /* Header Parallelogram - Used for section headers */
+  /* Section headers with standard rounded corners */
   .header-parallelogram {
-    clip-path: polygon(0 0, calc(100% - 12px) 0, 100% 100%, 12px 100%);
-    position: relative;
+    @apply rounded-lg;
   }
 
-  /* Input Parallelogram */
+  /* Inputs with standard rounded corners */
   .input-parallelogram {
-    clip-path: polygon(6px 0, 100% 0, calc(100% - 6px) 100%, 0 100%);
-    position: relative;
+    @apply rounded-lg;
   }
 
-  /* Stats Card Parallelogram */
+  /* Stats cards with standard rounded corners */
   .stats-parallelogram {
-    clip-path: polygon(10px 0, 100% 0, calc(100% - 10px) 100%, 0 100%);
-    position: relative;
+    @apply rounded-lg;
   }
 }

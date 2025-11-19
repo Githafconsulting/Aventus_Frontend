@@ -11,6 +11,29 @@ import {
 } from "lucide-react";
 import { API_ENDPOINTS } from "@/lib/config";
 
+const COUNTRIES = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+  "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia",
+  "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon",
+  "Canada", "Cape Verde", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo",
+  "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czech Republic", "Denmark", "Djibouti", "Dominica", "Dominican Republic",
+  "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Ethiopia", "Fiji", "Finland", "France",
+  "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
+  "Haiti", "Honduras", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Jamaica",
+  "Japan", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho",
+  "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Macedonia", "Madagascar", "Malawi", "Malaysia", "Maldives",
+  "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia",
+  "Montenegro", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua",
+  "Niger", "Nigeria", "North Korea", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea",
+  "Paraguay", "Peru", "Philippines", "Poland", "Portugal", "Qatar", "Romania", "Russia", "Rwanda", "Saint Kitts and Nevis",
+  "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal",
+  "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa",
+  "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Swaziland", "Sweden", "Switzerland", "Syria",
+  "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan",
+  "Tuvalu", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu",
+  "Vatican City", "Venezuela", "Vietnam", "Yemen", "Zambia", "Zimbabwe"
+];
+
 export default function DocumentUploadPage() {
   const params = useParams();
   const token = params.token as string;
@@ -28,6 +51,8 @@ export default function DocumentUploadPage() {
     gender: "",
     dob: "",
     nationality: "",
+    country: "",
+    current_location: "",
     marital_status: "",
     number_of_children: "",
     phone: "",
@@ -82,6 +107,8 @@ export default function DocumentUploadPage() {
         gender: data.gender || "",
         dob: data.dob || "",
         nationality: data.nationality || "",
+        country: data.country || "",
+        current_location: data.current_location || "",
         marital_status: data.marital_status || "",
         number_of_children: data.number_of_children || "",
         phone: data.phone || "",
@@ -135,6 +162,8 @@ export default function DocumentUploadPage() {
       submitData.append("home_address", formData.home_address);
 
       // Append optional fields
+      if (formData.country) submitData.append("country", formData.country);
+      if (formData.current_location) submitData.append("current_location", formData.current_location);
       if (formData.marital_status) submitData.append("marital_status", formData.marital_status);
       if (formData.number_of_children) submitData.append("number_of_children", formData.number_of_children);
       if (formData.address_line2) submitData.append("address_line2", formData.address_line2);
@@ -192,6 +221,13 @@ export default function DocumentUploadPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
+          <div className="mb-6">
+            <img
+              src="/av-logo.png"
+              alt="Aventus Logo"
+              className="h-20 w-auto object-contain mx-auto mb-4"
+            />
+          </div>
           <Loader2 className="w-12 h-12 text-[#FF6B00] animate-spin mx-auto mb-4" />
           <p className="text-gray-600">Loading...</p>
         </div>
@@ -203,6 +239,13 @@ export default function DocumentUploadPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mb-6">
+            <img
+              src="/av-logo.png"
+              alt="Aventus Logo"
+              className="h-16 w-auto object-contain mx-auto mb-4"
+            />
+          </div>
           <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-8 h-8 text-red-600" />
           </div>
@@ -219,6 +262,13 @@ export default function DocumentUploadPage() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
         <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8 text-center">
+          <div className="mb-6">
+            <img
+              src="/av-logo.png"
+              alt="Aventus Logo"
+              className="h-16 w-auto object-contain mx-auto mb-4"
+            />
+          </div>
           <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <CheckCircle className="w-8 h-8 text-green-600" />
           </div>
@@ -248,10 +298,14 @@ export default function DocumentUploadPage() {
       <div className="max-w-3xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">
-            AVENTUS<span className="text-[#FF6B00]">.</span>
-          </h1>
-          <p className="text-gray-600">Contractor Onboarding</p>
+          <div className="flex justify-center mb-4">
+            <img
+              src="/av-logo.png"
+              alt="Aventus Logo"
+              className="h-20 w-auto object-contain"
+            />
+          </div>
+          <p className="text-gray-600 text-lg font-medium">Contractor Onboarding</p>
         </div>
 
         {/* Welcome Card */}
@@ -379,12 +433,54 @@ export default function DocumentUploadPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Nationality <span className="text-red-500">*</span>
                   </label>
-                  <input
-                    type="text"
+                  <select
                     name="nationality"
                     value={formData.nationality}
                     onChange={handleInputChange}
                     required
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  >
+                    <option value="">Select Nationality</option>
+                    {COUNTRIES.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Country and Current Location */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Country
+                  </label>
+                  <select
+                    name="country"
+                    value={formData.country}
+                    onChange={handleInputChange}
+                    className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
+                  >
+                    <option value="">Select Country</option>
+                    {COUNTRIES.map((country) => (
+                      <option key={country} value={country}>
+                        {country}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Current Location
+                  </label>
+                  <input
+                    type="text"
+                    name="current_location"
+                    value={formData.current_location}
+                    onChange={handleInputChange}
+                    placeholder="City or region"
                     className="block w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B00] focus:border-[#FF6B00] transition-colors text-gray-900"
                   />
                 </div>

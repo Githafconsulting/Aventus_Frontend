@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
-import { ArrowLeft, Send, FileText, Download, Upload, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { ArrowLeft, Send, FileText, CheckCircle, Clock } from "lucide-react";
+import { API_ENDPOINTS } from "@/lib/config";
 
 export default function QuoteSheetsPage() {
   const { theme } = useTheme();
@@ -13,39 +14,43 @@ export default function QuoteSheetsPage() {
   const contractorId = params.id as string;
 
   const [contractor, setContractor] = useState<any>(null);
+  const [thirdParties, setThirdParties] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState<"pending_request" | "requested" | "received" | "approved">("pending_request");
+  const [submitting, setSubmitting] = useState(false);
+  const [status, setStatus] = useState<"pending_request" | "requested">("pending_request");
 
   const [requestForm, setRequestForm] = useState({
-    saudiThirdPartyEmail: "",
+    thirdPartyId: "",
+    thirdPartyEmail: "",
+    emailCC: "",
+    emailSubject: "Quote Sheet Request for Contractor",
     requestMessage: "",
-  });
-
-  const [quoteSheetData, setQuoteSheetData] = useState({
-    quotationNumber: "",
-    quotationDate: "",
-    monthlyRate: "",
-    setupFee: "",
-    otherCharges: "",
-    totalCost: "",
-    notes: "",
-    attachmentUrl: "",
   });
 
   useEffect(() => {
     fetchContractor();
+    fetchThirdParties();
   }, [contractorId]);
 
   const fetchContractor = async () => {
     try {
-      // TODO: Replace with actual API call
-      setContractor({
-        id: contractorId,
-        firstName: "John",
-        surname: "Doe",
-        country: "Saudi Arabia",
-        businessType: "3rd_party_saudi",
+      const token = localStorage.getItem("aventus-auth-token");
+      const response = await fetch(API_ENDPOINTS.contractorById(contractorId), {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
+
+      if (response.ok) {
+        const data = await response.json();
+        setContractor(data);
+
+        // Pre-fill the message with contractor details
+        setRequestForm(prev => ({
+          ...prev,
+          requestMessage: `Dear Team,\n\nWe kindly request a quote sheet for the following contractor:\n\nContractor Name: ${data.first_name} ${data.surname}\nEmail: ${data.email}\nPhone: ${data.phone}\n\nPlease use the button below to upload the quote sheet document.\n\nThank you for your cooperation.`
+        }));
+      }
       setLoading(false);
     } catch (error) {
       console.error("Error fetching contractor:", error);
@@ -53,30 +58,85 @@ export default function QuoteSheetsPage() {
     }
   };
 
+  const fetchThirdParties = async () => {
+    try {
+      const token = localStorage.getItem("aventus-auth-token");
+      const response = await fetch(`${API_ENDPOINTS.contractors.replace('/contractors/', '/third-parties/')}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setThirdParties(data);
+      }
+    } catch (error) {
+      console.error("Error fetching third parties:", error);
+    }
+  };
+
+  const handleThirdPartyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const selectedId = e.target.value;
+
+    if (selectedId) {
+      const selectedThirdParty = thirdParties.find(tp => tp.id === selectedId);
+      if (selectedThirdParty) {
+        setRequestForm(prev => ({
+          ...prev,
+          thirdPartyId: selectedId,
+          thirdPartyEmail: selectedThirdParty.contact_person_email || "",
+        }));
+      }
+    } else {
+      setRequestForm(prev => ({
+        ...prev,
+        thirdPartyId: "",
+        thirdPartyEmail: "",
+      }));
+    }
+  };
+
   const handleSendRequest = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // TODO: Send email to Saudi 3rd Party
-    console.log("Sending Quote Sheet request:", requestForm);
+    if (!requestForm.thirdPartyEmail || !requestForm.emailSubject || !requestForm.requestMessage) {
+      alert("Please fill in all required fields");
+      return;
+    }
 
-    alert(`Quote Sheet request sent to ${requestForm.saudiThirdPartyEmail}`);
-    setStatus("requested");
-  };
+    setSubmitting(true);
 
-  const handleQuoteSheetReceived = async (e: React.FormEvent) => {
-    e.preventDefault();
+    try {
+      const token = localStorage.getItem("aventus-auth-token");
+      const response = await fetch(`${API_ENDPOINTS.contractorById(contractorId)}/request-quote-sheet`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          third_party_id: requestForm.thirdPartyId || null,
+          third_party_email: requestForm.thirdPartyEmail,
+          email_cc: requestForm.emailCC || null,
+          email_subject: requestForm.emailSubject,
+          email_message: requestForm.requestMessage,
+        }),
+      });
 
-    // TODO: Save quote sheet data
-    console.log("Quote Sheet data:", quoteSheetData);
-
-    alert("Quote Sheet data saved successfully!");
-    setStatus("received");
-  };
-
-  const handleApprove = () => {
-    setStatus("approved");
-    alert("Quote Sheet approved! Proceeding to next step.");
-    router.push(`/dashboard/contractors/${contractorId}/costing-sheet`);
+      if (response.ok) {
+        setStatus("requested");
+        alert("Quote sheet request sent successfully!");
+      } else {
+        const errorData = await response.json();
+        throw new Error(errorData.detail || "Failed to send request");
+      }
+    } catch (error: any) {
+      console.error("Error sending request:", error);
+      alert(`Failed to send request: ${error.message}`);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -104,10 +164,10 @@ export default function QuoteSheetsPage() {
         <div className="flex items-center justify-between">
           <div>
             <h1 className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-              Quote Sheets - Saudi 3rd Party
+              Request Quote Sheet - Saudi Arabia
             </h1>
             <p className="text-gray-400 mt-2">
-              {contractor?.firstName} {contractor?.surname}
+              {contractor?.first_name} {contractor?.surname}
             </p>
           </div>
 
@@ -116,291 +176,199 @@ export default function QuoteSheetsPage() {
             {status === "pending_request" && (
               <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-700">
                 <Clock size={16} />
-                Pending Request
+                Ready to Send
               </span>
             )}
             {status === "requested" && (
-              <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-yellow-100 text-yellow-700">
-                <AlertCircle size={16} />
-                Awaiting Response
-              </span>
-            )}
-            {status === "received" && (
-              <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-700">
-                <FileText size={16} />
-                Quote Sheet Received
-              </span>
-            )}
-            {status === "approved" && (
               <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-100 text-green-700">
                 <CheckCircle size={16} />
-                Approved
+                Request Sent
               </span>
             )}
           </div>
         </div>
       </div>
 
-      {/* Step 1: Send Request to Saudi 3rd Party */}
-      {(status === "pending_request" || status === "requested") && (
-        <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} rounded-lg shadow-sm p-6 mb-6`}>
+      {/* Request Form */}
+      {status === "pending_request" && (
+        <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} rounded-lg shadow-sm p-6`}>
           <h2 className={`text-xl font-bold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-            Step 1: Request Quote Sheet from Saudi 3rd Party
+            Send Quote Sheet Request
           </h2>
           <p className="text-sm text-gray-400 mb-6">
-            Send an email to the Saudi third-party provider requesting the quote sheet for this contractor.
+            Send an email to the third-party provider with a link to upload the quote sheet document.
           </p>
 
           <form onSubmit={handleSendRequest}>
-            <div className="space-y-4">
+            <div className="space-y-5">
+              {/* Third Party Dropdown - Full Width */}
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Saudi 3rd Party Email *
+                  Select Third Party
                 </label>
-                <input
-                  type="email"
-                  value={requestForm.saudiThirdPartyEmail}
-                  onChange={(e) => setRequestForm({ ...requestForm, saudiThirdPartyEmail: e.target.value })}
-                  required
-                  disabled={status === "requested"}
-                  placeholder="saudi.provider@example.com"
+                <select
+                  value={requestForm.thirdPartyId}
+                  onChange={handleThirdPartyChange}
                   className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
                     theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed`}
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                >
+                  <option value="">-- Select from existing third parties or enter email below --</option>
+                  {thirdParties.map((tp) => (
+                    <option key={tp.id} value={tp.id}>
+                      {tp.company_name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Two Column Layout for Email Fields */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    Third Party Email *
+                  </label>
+                  <input
+                    type="email"
+                    value={requestForm.thirdPartyEmail}
+                    onChange={(e) => setRequestForm({ ...requestForm, thirdPartyEmail: e.target.value })}
+                    required
+                    placeholder="provider@example.com"
+                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                      theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-400 mb-2">
+                    CC Email (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    value={requestForm.emailCC}
+                    onChange={(e) => setRequestForm({ ...requestForm, emailCC: e.target.value })}
+                    placeholder="cc@example.com"
+                    className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                      theme === "dark"
+                        ? "bg-gray-800 border-gray-700 text-white"
+                        : "bg-white border-gray-300 text-gray-900"
+                    } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                  />
+                </div>
+              </div>
+
+              {/* Email Subject - Full Width */}
+              <div>
+                <label className="block text-sm font-medium text-gray-400 mb-2">
+                  Email Subject *
+                </label>
+                <input
+                  type="text"
+                  value={requestForm.emailSubject}
+                  onChange={(e) => setRequestForm({ ...requestForm, emailSubject: e.target.value })}
+                  required
+                  placeholder="Quote Sheet Request for Contractor"
+                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                    theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-white"
+                      : "bg-white border-gray-300 text-gray-900"
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
                 />
               </div>
 
+              {/* Message Area - Full Width with More Height */}
               <div>
                 <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Request Message
+                  Request Message *
                 </label>
                 <textarea
                   value={requestForm.requestMessage}
                   onChange={(e) => setRequestForm({ ...requestForm, requestMessage: e.target.value })}
-                  disabled={status === "requested"}
-                  rows={6}
-                  placeholder="Dear Team,&#10;&#10;Please provide a quote sheet for the following contractor:&#10;Name: John Doe&#10;Position: Software Engineer&#10;...&#10;"
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
+                  required
+                  rows={14}
+                  placeholder="Enter your message to the third party..."
+                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none resize-none ${
                     theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed`}
+                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
                 ></textarea>
               </div>
 
-              {status === "pending_request" && (
+              {/* Action Buttons */}
+              <div className="flex gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => router.push(`/dashboard/contractors/${contractorId}`)}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-all"
+                >
+                  Cancel
+                </button>
                 <button
                   type="submit"
-                  className="flex items-center gap-2 px-6 py-3 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E55A00] transition-all"
+                  disabled={submitting}
+                  className="flex items-center gap-2 px-6 py-3 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E55A00] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Send size={18} />
-                  Send Request to Saudi 3rd Party
+                  {submitting ? "Sending..." : "Send Request"}
                 </button>
-              )}
-
-              {status === "requested" && (
-                <div className="flex items-center gap-2 text-green-600">
-                  <CheckCircle size={18} />
-                  <span>Request sent on {new Date().toLocaleDateString()}</span>
-                </div>
-              )}
+              </div>
             </div>
           </form>
-
-          {status === "requested" && (
-            <button
-              onClick={() => setStatus("received")}
-              className="mt-6 flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-            >
-              <FileText size={18} />
-              Mark as Received (Enter Quote Sheet Data)
-            </button>
-          )}
         </div>
       )}
 
-      {/* Step 2: Enter Quote Sheet Data */}
-      {(status === "received" || status === "approved") && (
-        <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} rounded-lg shadow-sm p-6 mb-6`}>
-          <h2 className={`text-xl font-bold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-            Step 2: Enter Quote Sheet Details
-          </h2>
-          <p className="text-sm text-gray-400 mb-6">
-            Enter the quote sheet information received from the Saudi third-party provider.
-          </p>
+      {/* Request Sent Confirmation */}
+      {status === "requested" && (
+        <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} rounded-lg shadow-sm p-6`}>
+          <div className="text-center py-8">
+            <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckCircle size={40} className="text-green-600" />
+            </div>
+            <h2 className={`text-2xl font-bold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+              Request Sent Successfully!
+            </h2>
+            <p className="text-gray-400 mb-4">
+              The quote sheet request has been sent to{" "}
+              <strong className="text-[#FF6B00]">{requestForm.thirdPartyEmail}</strong>
+              {requestForm.emailCC && (
+                <>
+                  {" "}with a CC to{" "}
+                  <strong className="text-[#FF6B00]">{requestForm.emailCC}</strong>
+                </>
+              )}
+            </p>
+            <p className="text-sm text-gray-500 mb-6">
+              The third party will receive an email with an upload link. Once they upload the quote sheet,
+              it will be automatically added to the contractor's documents, and you will be notified to
+              proceed with the CDS (Costing & Deal Sheet) form.
+            </p>
 
-          <form onSubmit={handleQuoteSheetReceived}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Quotation Number
-                </label>
-                <input
-                  type="text"
-                  value={quoteSheetData.quotationNumber}
-                  onChange={(e) => setQuoteSheetData({ ...quoteSheetData, quotationNumber: e.target.value })}
-                  disabled={status === "approved"}
-                  placeholder="QS-2025-001"
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Quotation Date
-                </label>
-                <input
-                  type="date"
-                  value={quoteSheetData.quotationDate}
-                  onChange={(e) => setQuoteSheetData({ ...quoteSheetData, quotationDate: e.target.value })}
-                  disabled={status === "approved"}
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Monthly Rate (SAR) *
-                </label>
-                <input
-                  type="number"
-                  value={quoteSheetData.monthlyRate}
-                  onChange={(e) => setQuoteSheetData({ ...quoteSheetData, monthlyRate: e.target.value })}
-                  disabled={status === "approved"}
-                  required
-                  placeholder="15000"
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Setup Fee (SAR)
-                </label>
-                <input
-                  type="number"
-                  value={quoteSheetData.setupFee}
-                  onChange={(e) => setQuoteSheetData({ ...quoteSheetData, setupFee: e.target.value })}
-                  disabled={status === "approved"}
-                  placeholder="2000"
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Other Charges (SAR)
-                </label>
-                <input
-                  type="number"
-                  value={quoteSheetData.otherCharges}
-                  onChange={(e) => setQuoteSheetData({ ...quoteSheetData, otherCharges: e.target.value })}
-                  disabled={status === "approved"}
-                  placeholder="500"
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50`}
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Total Cost (SAR) *
-                </label>
-                <input
-                  type="number"
-                  value={quoteSheetData.totalCost}
-                  onChange={(e) => setQuoteSheetData({ ...quoteSheetData, totalCost: e.target.value })}
-                  disabled={status === "approved"}
-                  required
-                  placeholder="17500"
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50`}
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Notes
-                </label>
-                <textarea
-                  value={quoteSheetData.notes}
-                  onChange={(e) => setQuoteSheetData({ ...quoteSheetData, notes: e.target.value })}
-                  disabled={status === "approved"}
-                  rows={4}
-                  placeholder="Additional notes or special terms..."
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50`}
-                ></textarea>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-400 mb-2">
-                  Attachment URL
-                </label>
-                <input
-                  type="url"
-                  value={quoteSheetData.attachmentUrl}
-                  onChange={(e) => setQuoteSheetData({ ...quoteSheetData, attachmentUrl: e.target.value })}
-                  disabled={status === "approved"}
-                  placeholder="https://storage.aventus.com/quote-sheets/..."
-                  className={`w-full px-4 py-3 rounded-lg border transition-all outline-none ${
-                    theme === "dark"
-                      ? "bg-gray-800 border-gray-700 text-white"
-                      : "bg-white border-gray-300 text-gray-900"
-                  } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent disabled:opacity-50`}
-                />
-              </div>
+            <div className={`${theme === "dark" ? "bg-gray-800" : "bg-gray-50"} rounded-lg p-4 mb-6`}>
+              <p className="text-sm text-gray-400 mb-2">
+                <strong>Next Steps:</strong>
+              </p>
+              <ol className="text-sm text-gray-500 text-left space-y-1 list-decimal list-inside">
+                <li>Third party uploads quote sheet document</li>
+                <li>Document is automatically saved to contractor</li>
+                <li>Contractor status changes to "Pending CDS"</li>
+                <li>You fill out the CDS form</li>
+                <li>Submit for superadmin review and approval</li>
+              </ol>
             </div>
 
-            {status === "received" && (
-              <div className="flex gap-4 mt-6">
-                <button
-                  type="submit"
-                  className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-                >
-                  <CheckCircle size={18} />
-                  Save Quote Sheet Data
-                </button>
-              </div>
-            )}
-          </form>
-
-          {status === "received" && quoteSheetData.monthlyRate && (
             <button
-              onClick={handleApprove}
-              className="mt-4 flex items-center gap-2 px-6 py-3 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E55A00] transition-all"
+              onClick={() => router.push(`/dashboard/contractors/${contractorId}`)}
+              className="px-6 py-3 bg-[#FF6B00] text-white rounded-lg hover:bg-[#E55A00] transition-all"
             >
-              <CheckCircle size={18} />
-              Approve & Continue to CDS/Costing Sheet
+              Return to Contractor Details
             </button>
-          )}
+          </div>
         </div>
       )}
     </DashboardLayout>
