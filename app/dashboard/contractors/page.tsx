@@ -9,6 +9,7 @@ import {
   Plus,
   CheckCircle,
   ArrowRight,
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -24,30 +25,31 @@ export default function ContractorsPage() {
   const [contractors, setContractors] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const handleDelete = async (contractorId: string, contractorName: string) => {
-    if (!confirm(`⚠️ CANCEL CONTRACTOR REQUEST\n\nAre you sure you want to cancel the contractor request for "${contractorName}"?\n\nThis will permanently delete all information related to this contractor and cannot be undone.\n\nClick OK to confirm cancellation, or Cancel to keep the contractor.`)) {
+  const handleCancel = async (contractorId: string, contractorName: string) => {
+    if (!confirm(`⚠️ CANCEL CONTRACTOR REQUEST\n\nAre you sure you want to cancel the contractor request for "${contractorName}"?\n\nThis will mark the contractor as rejected/cancelled but will keep the record for your reference.\n\nClick OK to confirm cancellation, or Cancel to keep the contractor active.`)) {
       return;
     }
 
     try {
       const token = localStorage.getItem("aventus-auth-token");
-      const response = await fetch(API_ENDPOINTS.contractorById(contractorId), {
-        method: "DELETE",
+      const response = await fetch(API_ENDPOINTS.contractorCancel(contractorId), {
+        method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ detail: "Failed to delete contractor" }));
-        throw new Error(errorData.detail || "Failed to delete contractor");
+        const errorData = await response.json().catch(() => ({ detail: "Failed to cancel contractor" }));
+        throw new Error(errorData.detail || "Failed to cancel contractor");
       }
 
       alert(`Contractor ${contractorName} cancelled successfully`);
-      // Refresh the contractors list
-      setContractors(contractors.filter(c => c.id !== contractorId));
+      // Reload the page to refresh contractor list
+      window.location.reload();
     } catch (error: any) {
-      console.error("Error deleting contractor:", error);
+      console.error("Error cancelling contractor:", error);
       alert(`Failed to cancel contractor: ${error.message}`);
     }
   };
@@ -78,6 +80,34 @@ export default function ContractorsPage() {
     } catch (error: any) {
       console.error("Error recalling contractor:", error);
       alert(`Failed to recall contractor: ${error.message}`);
+    }
+  };
+
+  const handleDelete = async (contractorId: string, contractorName: string) => {
+    if (!confirm(`🗑️ DELETE CONTRACTOR\n\nAre you sure you want to permanently delete "${contractorName}"?\n\nThis action cannot be undone and will remove all associated data.\n\nClick OK to delete permanently, or Cancel to keep the contractor.`)) {
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem("aventus-auth-token");
+      const response = await fetch(API_ENDPOINTS.contractorDelete(contractorId), {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ detail: "Failed to delete contractor" }));
+        throw new Error(errorData.detail || "Failed to delete contractor");
+      }
+
+      alert(`Contractor ${contractorName} deleted successfully`);
+      // Reload the page to refresh contractor list
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Error deleting contractor:", error);
+      alert(`Failed to delete contractor: ${error.message}`);
     }
   };
 
@@ -304,12 +334,17 @@ export default function ContractorsPage() {
             <option value="draft">Draft</option>
             <option value="pending_documents">Pending Documents</option>
             <option value="documents_uploaded">Documents Uploaded</option>
+            <option value="pending_third_party_response">Pending Third Party Response</option>
+            <option value="pending_cds_cs">Pending CDS & CS</option>
+            <option value="cds_cs_completed">CDS & CS Completed</option>
             <option value="pending_review">Pending Review</option>
             <option value="awaiting_work_order_approval">Awaiting Work Order Approval</option>
             <option value="approved">Approved</option>
             <option value="pending_signature">Pending Signature</option>
             <option value="signed">Signed</option>
             <option value="active">Active</option>
+            <option value="rejected">Rejected</option>
+            <option value="cancelled">Cancelled</option>
             <option value="suspended">Suspended</option>
           </select>
         </div>
@@ -476,8 +511,16 @@ export default function ContractorsPage() {
                             ? "bg-green-500/10 text-green-500"
                             : contractor.status === "rejected"
                             ? "bg-red-500/10 text-red-500"
+                            : contractor.status === "cancelled"
+                            ? "bg-gray-500/10 text-gray-500"
+                            : contractor.status === "pending_third_party_response"
+                            ? "bg-purple-500/10 text-purple-500"
                             : contractor.status === "awaiting_work_order_approval"
                             ? "bg-amber-500/10 text-amber-500"
+                            : contractor.status === "pending_cds_cs"
+                            ? "bg-purple-500/10 text-purple-500"
+                            : contractor.status === "cds_cs_completed"
+                            ? "bg-green-500/10 text-green-500"
                             : contractor.status === "pending_review"
                             ? "bg-orange-500/10 text-orange-500"
                             : contractor.status === "documents_uploaded"
@@ -497,6 +540,14 @@ export default function ContractorsPage() {
                           ? (user?.role === "consultant" ? "Approved - Send Contract" : "Approved")
                           : contractor.status === "rejected"
                           ? "Rejected"
+                          : contractor.status === "cancelled"
+                          ? "Cancelled"
+                          : contractor.status === "pending_third_party_response"
+                          ? "Pending Third Party Response"
+                          : contractor.status === "pending_cds_cs"
+                          ? "Pending CDS & CS"
+                          : contractor.status === "cds_cs_completed"
+                          ? "CDS & CS Completed"
                           : contractor.status.charAt(0).toUpperCase() +
                             contractor.status.slice(1).replace(/_/g, ' ')}
                       </span>
@@ -510,16 +561,16 @@ export default function ContractorsPage() {
                             Awaiting Documents
                           </span>
                           <button
-                            onClick={() => handleDelete(contractor.id, contractor.name)}
+                            onClick={() => handleCancel(contractor.id, contractor.name)}
                             className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
                           >
                             Cancel
                           </button>
                         </div>
                       ) : contractor.status === "documents_uploaded" ? (
-                        // Check if this is from third-party route or initial upload
-                        contractor.onboarding_route === "third_party" ? (
-                          // Third-party route: Show Fill CDS & CS Form button
+                        // Check if onboarding route has been selected
+                        contractor.onboarding_route ? (
+                          // Route selected (third_party or wps_freelancer): Show Fill CDS & CS Form button
                           user?.role === "consultant" ? (
                             <div className="flex items-center gap-2 justify-center">
                               <button
@@ -530,11 +581,11 @@ export default function ContractorsPage() {
                                 }
                                 className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2"
                               >
-                                Next: Fill CDS & CS Form
+                                {contractor.onboarding_route === "third_party" ? "Next: Fill CDS & CS Form" : "Fill CDS & CS Form"}
                                 <ArrowRight size={16} />
                               </button>
                               <button
-                                onClick={() => handleDelete(contractor.id, contractor.name)}
+                                onClick={() => handleCancel(contractor.id, contractor.name)}
                                 className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
                               >
                                 Cancel
@@ -546,7 +597,7 @@ export default function ContractorsPage() {
                                 Awaiting CDS & CS Form
                               </span>
                               <button
-                                onClick={() => handleDelete(contractor.id, contractor.name)}
+                                onClick={() => handleCancel(contractor.id, contractor.name)}
                                 className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
                               >
                                 Cancel
@@ -569,7 +620,7 @@ export default function ContractorsPage() {
                                 <ArrowRight size={16} />
                               </button>
                               <button
-                                onClick={() => handleDelete(contractor.id, contractor.name)}
+                                onClick={() => handleCancel(contractor.id, contractor.name)}
                                 className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
                               >
                                 Cancel
@@ -581,7 +632,7 @@ export default function ContractorsPage() {
                                 Awaiting Route Selection
                               </span>
                               <button
-                                onClick={() => handleDelete(contractor.id, contractor.name)}
+                                onClick={() => handleCancel(contractor.id, contractor.name)}
                                 className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
                               >
                                 Cancel
@@ -595,12 +646,74 @@ export default function ContractorsPage() {
                             Awaiting 3rd Party
                           </span>
                           <button
-                            onClick={() => handleDelete(contractor.id, contractor.name)}
+                            onClick={() => handleCancel(contractor.id, contractor.name)}
                             className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
                           >
                             Cancel
                           </button>
                         </div>
+                      ) : contractor.status === "pending_cds_cs" ? (
+                        // Pending CDS & CS: Show Fill CDS & CS Form button
+                        user?.role === "consultant" ? (
+                          <div className="flex items-center gap-2 justify-center">
+                            <button
+                              onClick={() =>
+                                router.push(
+                                  `/dashboard/contractors/complete-cds/${contractor.id}`
+                                )
+                              }
+                              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2"
+                            >
+                              Fill CDS & CS Form
+                              <ArrowRight size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleCancel(contractor.id, contractor.name)}
+                              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 justify-center">
+                            <span className="px-3 py-2 bg-blue-100 text-blue-700 btn-parallelogram text-xs font-medium">
+                              Pending CDS & CS
+                            </span>
+                            <button
+                              onClick={() => handleCancel(contractor.id, contractor.name)}
+                              className="px-3 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-xs font-medium"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        )
+                      ) : contractor.status === "cds_cs_completed" ? (
+                        user?.role === "consultant" ? (
+                          <div className="flex items-center gap-2 justify-center">
+                            <span className="px-3 py-2 bg-yellow-100 text-yellow-700 btn-parallelogram text-xs font-medium">
+                              Awaiting Approval
+                            </span>
+                            <button
+                              onClick={() => handleRecall(contractor.id, contractor.name)}
+                              className="px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white btn-parallelogram transition-all text-xs font-medium flex items-center gap-1"
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                              Recall
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/contractors/${contractor.id}/review`
+                              )
+                            }
+                            className="px-4 py-2 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2 mx-auto"
+                          >
+                            Review & Approve
+                            <ArrowRight size={16} />
+                          </button>
+                        )
                       ) : contractor.status === "pending_review" ? (
                         user?.role === "consultant" ? (
                           <div className="flex items-center gap-2 justify-center">
@@ -670,9 +783,18 @@ export default function ContractorsPage() {
                         </span>
                       ) : contractor.status === "pending_signature" || contractor.status === "draft" ? (
                         <button
-                          onClick={() => handleDelete(contractor.id, contractor.name)}
+                          onClick={() => handleCancel(contractor.id, contractor.name)}
                           className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-sm font-medium"
                         >
+                          Delete
+                        </button>
+                      ) : contractor.status === "cancelled" || contractor.status === "rejected" ? (
+                        <button
+                          onClick={() => handleDelete(contractor.id, contractor.name)}
+                          className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2 mx-auto"
+                          title="Delete Contractor"
+                        >
+                          <Trash2 size={16} />
                           Delete
                         </button>
                       ) : contractor.status === "signed" ? (
