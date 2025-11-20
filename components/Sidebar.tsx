@@ -25,6 +25,7 @@ import {
   Briefcase,
   ClipboardList,
   Send,
+  FolderOpen,
 } from "lucide-react";
 
 // Super Admin menu items (Full System Control)
@@ -63,6 +64,11 @@ const superAdminMenuItems = [
     title: "Work Orders",
     icon: Briefcase,
     href: "/dashboard/work-orders",
+  },
+  {
+    title: "My Contracts",
+    icon: FolderOpen,
+    href: "/dashboard/my-contracts",
   },
   {
     title: "Timesheets",

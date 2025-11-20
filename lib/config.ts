@@ -30,11 +30,14 @@ export const getApiUrl = (): string => {
 
 // API endpoint builders - these call getApiUrl() dynamically at runtime
 export const API_ENDPOINTS = {
+  // Base API URL
+  get apiUrl() { return getApiUrl(); },
+
   // Auth
   get login() { return `${getApiUrl()}/api/v1/auth/login`; },
 
   // Contractors
-  get contractors() { return `${getApiUrl()}/api/v1/contractors/`; },
+  get contractors() { return `${getApiUrl()}/api/v1/contractors`; },
   get contractorsInitial() { return `${getApiUrl()}/api/v1/contractors/initial`; },
   contractorById: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}`,
   contractorSignedContract: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/signed-contract`,
@@ -45,6 +48,11 @@ export const API_ENDPOINTS = {
   contractorCancel: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/cancel`,
   contractorDelete: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}`,
   contractorDocuments: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/documents`,
+
+  // Work Orders
+  contractorWorkOrder: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/work-order`,
+  contractorWorkOrderPdf: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/work-order/pdf`,
+  contractorWorkOrderApprove: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/work-order/approve`,
 
   // Document upload
   uploadDocuments: (token: string) => `${getApiUrl()}/api/v1/contractors/upload-documents/${token}`,
@@ -70,4 +78,10 @@ export const API_ENDPOINTS = {
 
   // Signature
   get superadminSignature() { return `${getApiUrl()}/api/v1/contractors/superadmin/signature`; },
+
+  // Superadmin contract signing
+  superadminSignContract: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/superadmin-sign-contract`,
+
+  // Superadmin Contracts
+  get myContracts() { return `${getApiUrl()}/api/v1/auth/my-contracts`; },
 };

@@ -340,7 +340,9 @@ export default function ContractorsPage() {
             <option value="pending_review">Pending Review</option>
             <option value="awaiting_work_order_approval">Awaiting Work Order Approval</option>
             <option value="approved">Approved</option>
+            <option value="work_order_completed">Work Order Completed</option>
             <option value="pending_signature">Pending Signature</option>
+            <option value="pending_superadmin_signature">Pending Superadmin Signature</option>
             <option value="signed">Signed</option>
             <option value="active">Active</option>
             <option value="rejected">Rejected</option>
@@ -517,6 +519,8 @@ export default function ContractorsPage() {
                             ? "bg-purple-500/10 text-purple-500"
                             : contractor.status === "awaiting_work_order_approval"
                             ? "bg-amber-500/10 text-amber-500"
+                            : contractor.status === "work_order_completed"
+                            ? "bg-green-500/10 text-green-500"
                             : contractor.status === "pending_cds_cs"
                             ? "bg-purple-500/10 text-purple-500"
                             : contractor.status === "cds_cs_completed"
@@ -529,6 +533,8 @@ export default function ContractorsPage() {
                             ? "bg-yellow-500/10 text-yellow-500"
                             : contractor.status === "pending_signature"
                             ? "bg-yellow-500/10 text-yellow-500"
+                            : contractor.status === "pending_superadmin_signature"
+                            ? "bg-orange-500/10 text-orange-500"
                             : contractor.status === "draft"
                             ? "bg-gray-500/10 text-gray-500"
                             : contractor.status === "suspended"
@@ -537,7 +543,7 @@ export default function ContractorsPage() {
                         }`}
                       >
                         {contractor.status === "approved"
-                          ? (user?.role === "consultant" ? "Approved - Send Contract" : "Approved")
+                          ? (user?.role === "consultant" ? "Approved - Send Work Order" : "Approved")
                           : contractor.status === "rejected"
                           ? "Rejected"
                           : contractor.status === "cancelled"
@@ -764,12 +770,12 @@ export default function ContractorsPage() {
                           <button
                             onClick={() =>
                               router.push(
-                                `/dashboard/contractors/${contractor.id}/generate-contract`
+                                `/dashboard/contractors/${contractor.id}/work-order-review`
                               )
                             }
                             className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2 mx-auto"
                           >
-                            Send Contract
+                            Send Work Order
                             <ArrowRight size={16} />
                           </button>
                         ) : (
@@ -781,7 +787,29 @@ export default function ContractorsPage() {
                         <span className="px-4 py-2 bg-red-100 text-red-700 btn-parallelogram text-sm font-medium">
                           Rejected
                         </span>
-                      ) : contractor.status === "pending_signature" || contractor.status === "draft" ? (
+                      ) : contractor.status === "pending_signature" ? (
+                        <span className="px-4 py-2 bg-yellow-100 text-yellow-700 btn-parallelogram text-sm font-medium">
+                          Awaiting Contractor Signature
+                        </span>
+                      ) : contractor.status === "pending_superadmin_signature" ? (
+                        user?.role === "superadmin" ? (
+                          <button
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/contractors/${contractor.id}/sign-contract`
+                              )
+                            }
+                            className="px-4 py-2 bg-[#FF6B00] hover:bg-[#FF6B00]/90 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2 mx-auto"
+                          >
+                            Review & Sign Contract
+                            <ArrowRight size={16} />
+                          </button>
+                        ) : (
+                          <span className="px-4 py-2 bg-orange-100 text-orange-700 btn-parallelogram text-sm font-medium">
+                            Awaiting Superadmin Signature
+                          </span>
+                        )
+                      ) : contractor.status === "draft" ? (
                         <button
                           onClick={() => handleCancel(contractor.id, contractor.name)}
                           className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white btn-parallelogram transition-all text-sm font-medium"
@@ -796,6 +824,18 @@ export default function ContractorsPage() {
                         >
                           <Trash2 size={16} />
                           Delete
+                        </button>
+                      ) : contractor.status === "work_order_completed" ? (
+                        <button
+                          onClick={() =>
+                            router.push(
+                              `/dashboard/contractors/${contractor.id}/generate-contract`
+                            )
+                          }
+                          className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2 mx-auto"
+                        >
+                          Generate Contract
+                          <ArrowRight size={16} />
                         </button>
                       ) : contractor.status === "signed" ? (
                         <button
