@@ -50,11 +50,16 @@ export default function ReviewContractorPage() {
   const fetchContractor = async () => {
     try {
       const token = localStorage.getItem("aventus-auth-token");
+      // Add timestamp to prevent browser caching
+      const cacheBuster = `?_=${Date.now()}`;
       const response = await fetch(
-        API_ENDPOINTS.contractorById(contractorId),
+        API_ENDPOINTS.contractorById(contractorId) + cacheBuster,
         {
           headers: {
             Authorization: `Bearer ${token}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           },
         }
       );
@@ -499,14 +504,34 @@ export default function ReviewContractorPage() {
                 <DocumentRow label="Passport" documentUrl={contractor.passport_document} />
                 <DocumentRow label="Photo" documentUrl={contractor.photo_document} />
                 <DocumentRow label="Visa Page" documentUrl={contractor.visa_page_document} />
+                <DocumentRow label="ID Front" documentUrl={contractor.id_front_document} />
+                <DocumentRow label="ID Back" documentUrl={contractor.id_back_document} />
                 <DocumentRow label="Emirates ID" documentUrl={contractor.emirates_id_document} />
                 <DocumentRow label="Degree Certificate" documentUrl={contractor.degree_document} />
+                <DocumentRow label="Third Party Document" documentUrl={contractor.third_party_document} />
+
+                {/* Other Documents */}
+                {contractor.other_documents && Object.keys(contractor.other_documents).length > 0 && (
+                  <div className="mt-2">
+                    {Object.entries(contractor.other_documents).map(([key, value]: [string, any]) => (
+                      <DocumentRow
+                        key={key}
+                        label={`Other: ${value.name || key}`}
+                        documentUrl={value.url || value}
+                      />
+                    ))}
+                  </div>
+                )}
 
                 {!contractor.passport_document &&
                   !contractor.photo_document &&
                   !contractor.visa_page_document &&
+                  !contractor.id_front_document &&
+                  !contractor.id_back_document &&
                   !contractor.emirates_id_document &&
-                  !contractor.degree_document && (
+                  !contractor.degree_document &&
+                  !contractor.third_party_document &&
+                  (!contractor.other_documents || Object.keys(contractor.other_documents).length === 0) && (
                     <div className="text-center py-8">
                       <FileText className="mx-auto text-gray-400 mb-2" size={32} />
                       <p className="text-sm font-medium text-gray-700">No documents uploaded</p>

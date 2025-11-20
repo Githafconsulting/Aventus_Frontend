@@ -172,42 +172,62 @@ export default function SuperadminSignContractPage() {
         </p>
       </div>
 
+      {/* Contract Preview */}
+      <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} card-parallelogram p-6 mb-6`}>
+        <h2 className={`text-xl font-semibold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+          Contract Preview
+        </h2>
+        <p className="text-sm text-gray-400 mb-4">
+          Review the contract signed by {contractor.first_name} {contractor.surname} on{" "}
+          {contractor.signed_date ? new Date(contractor.signed_date).toLocaleString() : "N/A"}
+        </p>
+        <div className="border-2 border-gray-700 rounded-lg overflow-hidden" style={{ height: "600px" }}>
+          <iframe
+            src={`${API_ENDPOINTS.contractPdf(contractor.contract_token || '')}`}
+            className="w-full h-full"
+            title="Contract Preview"
+          />
+        </div>
+      </div>
+
       {/* Contractor Info */}
       <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} card-parallelogram p-6 mb-6`}>
         <h2 className={`text-xl font-semibold mb-4 ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
           Contractor Information
         </h2>
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <p className="text-sm text-gray-400">Name</p>
-            <p className={`font-medium ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+          <div className={`p-4 rounded ${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
+            <p className={`text-sm font-medium mb-1 ${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>Name</p>
+            <p className={`font-semibold text-lg ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               {contractor.first_name} {contractor.surname}
             </p>
           </div>
-          <div>
-            <p className="text-sm text-gray-400">Email</p>
-            <p className={`font-medium ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+          <div className={`p-4 rounded ${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
+            <p className={`text-sm font-medium mb-1 ${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>Email</p>
+            <p className={`font-semibold text-lg ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               {contractor.email}
             </p>
           </div>
-          <div>
-            <p className="text-sm text-gray-400">Role</p>
-            <p className={`font-medium ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+          <div className={`p-4 rounded ${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
+            <p className={`text-sm font-medium mb-1 ${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>Role</p>
+            <p className={`font-semibold text-lg ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               {contractor.role || "N/A"}
             </p>
           </div>
-          <div>
-            <p className="text-sm text-gray-400">Client</p>
-            <p className={`font-medium ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+          <div className={`p-4 rounded ${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
+            <p className={`text-sm font-medium mb-1 ${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>Client</p>
+            <p className={`font-semibold text-lg ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
               {contractor.client_name || "N/A"}
             </p>
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-gray-700">
-          <p className="text-sm text-gray-400 mb-2">Contractor Signed Date</p>
-          <p className={`font-medium ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-            {contractor.signed_date ? new Date(contractor.signed_date).toLocaleString() : "Not signed"}
-          </p>
+        <div className={`mt-4 pt-4 border-t ${theme === "dark" ? "border-gray-600" : "border-gray-300"}`}>
+          <div className={`p-4 rounded ${theme === "dark" ? "bg-gray-800" : "bg-gray-50"}`}>
+            <p className={`text-sm font-medium mb-1 ${theme === "dark" ? "text-gray-300" : "text-gray-600"}`}>Contractor Signed Date</p>
+            <p className={`font-semibold text-lg ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+              {contractor.signed_date ? new Date(contractor.signed_date).toLocaleString() : "Not signed"}
+            </p>
+          </div>
         </div>
       </div>
 
@@ -278,59 +298,85 @@ export default function SuperadminSignContractPage() {
         {/* Signature Input */}
         <div className="mb-6">
           {signatureType === "saved" && savedSignature && (
-            <div className={`p-6 border-2 ${theme === "dark" ? "border-gray-700" : "border-gray-300"} btn-parallelogram`}>
-              <p className="text-sm text-gray-400 mb-2">Saved Signature:</p>
-              {savedSignature.signature_type === "typed" ? (
-                <p className="text-3xl italic font-cursive">{savedSignature.signature_data}</p>
-              ) : (
-                <img src={savedSignature.signature_data} alt="Saved signature" className="max-h-24" />
-              )}
+            <div className={`p-6 border-2 ${theme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-300 bg-gray-50"} btn-parallelogram`}>
+              <label className={`block mb-3 text-sm font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                Your saved signature
+              </label>
+              <div className={`p-4 border-2 ${theme === "dark" ? "border-gray-600 bg-gray-900" : "border-gray-300 bg-white"} rounded`}>
+                {savedSignature.signature_type === "typed" ? (
+                  <p className={`text-3xl italic font-cursive ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
+                    {savedSignature.signature_data}
+                  </p>
+                ) : (
+                  <img src={savedSignature.signature_data} alt="Saved signature" className="max-h-24" />
+                )}
+              </div>
             </div>
           )}
 
           {signatureType === "typed" && (
-            <input
-              type="text"
-              value={typedSignature}
-              onChange={(e) => setTypedSignature(e.target.value)}
-              placeholder="Enter your full name"
-              className={`w-full px-4 py-3 input-parallelogram border transition-all outline-none ${
-                theme === "dark"
-                  ? "bg-gray-800 border-gray-700 text-white placeholder-gray-400"
-                  : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
-              } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
-            />
+            <div className={`p-6 border-2 ${theme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-300 bg-gray-50"} btn-parallelogram`}>
+              <label className={`block mb-2 text-sm font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                Type your full name
+              </label>
+              <input
+                type="text"
+                value={typedSignature}
+                onChange={(e) => setTypedSignature(e.target.value)}
+                placeholder="Enter your full name"
+                className={`w-full px-4 py-3 input-parallelogram border-2 transition-all outline-none ${
+                  theme === "dark"
+                    ? "bg-gray-900 border-gray-600 text-white placeholder-gray-500"
+                    : "bg-white border-gray-300 text-gray-900 placeholder-gray-500"
+                } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent text-xl`}
+              />
+            </div>
           )}
 
           {signatureType === "drawn" && (
             <div>
-              <div className={`border-2 ${theme === "dark" ? "border-gray-700" : "border-gray-300"} btn-parallelogram`}>
-                <SignatureCanvas
-                  ref={signatureCanvasRef}
-                  canvasProps={{
-                    className: "w-full h-48 bg-white",
-                  }}
-                />
+              <div className={`p-4 border-2 ${theme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-300 bg-gray-50"} btn-parallelogram`}>
+                <label className={`block mb-2 text-sm font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                  Draw your signature below
+                </label>
+                <div className="border-2 border-gray-400 rounded bg-white">
+                  <SignatureCanvas
+                    ref={signatureCanvasRef}
+                    canvasProps={{
+                      className: "w-full h-48",
+                    }}
+                  />
+                </div>
+                <button
+                  onClick={clearDrawnSignature}
+                  className="mt-3 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white btn-parallelogram transition-all text-sm"
+                >
+                  Clear Signature
+                </button>
               </div>
-              <button
-                onClick={clearDrawnSignature}
-                className="mt-2 px-4 py-2 bg-gray-600 hover:bg-gray-700 text-white btn-parallelogram transition-all text-sm"
-              >
-                Clear
-              </button>
             </div>
           )}
 
           {signatureType === "upload" && (
             <div>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileUpload}
-                className="mb-4"
-              />
+              <div className={`p-6 border-2 ${theme === "dark" ? "border-gray-700 bg-gray-800" : "border-gray-300 bg-gray-50"} btn-parallelogram`}>
+                <label className={`block mb-2 text-sm font-medium ${theme === "dark" ? "text-gray-300" : "text-gray-700"}`}>
+                  Upload signature image (PNG, JPG)
+                </label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                  className={`block w-full text-sm ${
+                    theme === "dark"
+                      ? "text-gray-300 file:bg-gray-700 file:text-white"
+                      : "text-gray-900 file:bg-gray-200 file:text-gray-900"
+                  } file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:font-semibold hover:file:bg-[#FF6B00] hover:file:text-white file:cursor-pointer cursor-pointer transition-all`}
+                />
+              </div>
               {uploadedSignature && (
-                <div className={`p-6 border-2 ${theme === "dark" ? "border-gray-700" : "border-gray-300"} btn-parallelogram`}>
+                <div className={`mt-4 p-6 border-2 ${theme === "dark" ? "border-gray-700" : "border-gray-300"} btn-parallelogram`}>
+                  <p className="text-sm text-gray-400 mb-2">Preview:</p>
                   <img src={uploadedSignature} alt="Uploaded signature" className="max-h-24" />
                 </div>
               )}

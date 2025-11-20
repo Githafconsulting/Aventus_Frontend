@@ -522,13 +522,13 @@ export default function ContractorDetailPage() {
                 <ListItem
                   icon={DollarSign}
                   label="Candidate Pay Rate"
-                  value={contractor.candidate_pay_rate ? `${contractor.currency} ${contractor.candidate_pay_rate.toFixed(2)}` : "N/A"}
+                  value={contractor.candidate_pay_rate ? `${contractor.currency} ${parseFloat(contractor.candidate_pay_rate).toFixed(2)}` : "N/A"}
                   iconColor="text-green-500"
                 />
                 <ListItem
                   icon={DollarSign}
                   label="Client Charge Rate"
-                  value={contractor.client_charge_rate ? `${contractor.currency} ${contractor.client_charge_rate.toFixed(2)}` : "N/A"}
+                  value={contractor.client_charge_rate ? `${contractor.currency} ${parseFloat(contractor.client_charge_rate).toFixed(2)}` : "N/A"}
                   iconColor="text-orange-500"
                 />
                 {contractor.umbrella_company_name && (

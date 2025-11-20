@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ArrowLeft, Send, FileText, Loader2 } from "lucide-react";
+import { API_ENDPOINTS } from "@/lib/config";
 
 export default function GenerateContractPage() {
   const { theme } = useTheme();
@@ -32,6 +33,7 @@ export default function GenerateContractPage() {
   });
   const [fullContractText, setFullContractText] = useState("");
   const [previewKey, setPreviewKey] = useState(0);
+  const [authToken, setAuthToken] = useState<string | null>(null);
 
   useEffect(() => {
     fetchContractorAndGenerateContract();
@@ -59,7 +61,10 @@ export default function GenerateContractPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/contractors/${contractorId}`, {
+      // Store token in state for iframe use
+      setAuthToken(token);
+
+      const response = await fetch(`${API_ENDPOINTS.apiUrl}/api/v1/contractors/${contractorId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -250,7 +255,7 @@ CONSULTANT`;
       const token = localStorage.getItem("aventus-auth-token");
 
       // Silently update contractor data in the background
-      await fetch(`http://localhost:8000/api/v1/contractors/${contractorId}/update-contract-data`, {
+      await fetch(`${API_ENDPOINTS.apiUrl}/api/v1/contractors/${contractorId}/update-contract-data`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -291,7 +296,7 @@ CONSULTANT`;
       const token = localStorage.getItem("aventus-auth-token");
 
       // Update contractor CDS data with edited values
-      const response = await fetch(`http://localhost:8000/api/v1/contractors/${contractorId}/update-contract-data`, {
+      const response = await fetch(`${API_ENDPOINTS.apiUrl}/api/v1/contractors/${contractorId}/update-contract-data`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -345,7 +350,7 @@ CONSULTANT`;
       const token = localStorage.getItem("aventus-auth-token");
 
       // Send contract using the simpler contractors endpoint
-      const response = await fetch(`http://localhost:8000/api/v1/contractors/${contractorId}/send-contract`, {
+      const response = await fetch(`${API_ENDPOINTS.apiUrl}/api/v1/contractors/${contractorId}/send-contract`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -663,7 +668,7 @@ CONSULTANT`;
                 <div className="flex-1">
                   <iframe
                     key={`preview-${previewKey}`}
-                    src={`http://localhost:8000/api/v1/contractors/${contractorId}/contract-preview?t=${previewKey}`}
+                    src={`${API_ENDPOINTS.apiUrl}/api/v1/contractors/${contractorId}/contract-preview?token=${authToken}&t=${previewKey}`}
                     className="w-full h-full border-0"
                     title="Contract Preview PDF"
                   />
@@ -674,7 +679,7 @@ CONSULTANT`;
         ) : (
           <div className={`flex-1 ${theme === "dark" ? "bg-gray-800" : "bg-white"} rounded-lg shadow-lg overflow-hidden`}>
             <iframe
-              src={`http://localhost:8000/api/v1/contractors/${contractorId}/contract-preview`}
+              src={`${API_ENDPOINTS.apiUrl}/api/v1/contractors/${contractorId}/contract-preview?token=${authToken}`}
               className="w-full h-full border-0"
               title="Contract Preview PDF"
             />

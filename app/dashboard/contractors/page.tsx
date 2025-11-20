@@ -10,6 +10,7 @@ import {
   CheckCircle,
   ArrowRight,
   Trash2,
+  Eye,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -554,6 +555,12 @@ export default function ContractorsPage() {
                           ? "Pending CDS & CS"
                           : contractor.status === "cds_cs_completed"
                           ? "CDS & CS Completed"
+                          : contractor.status === "signed"
+                          ? "Contract Signed"
+                          : contractor.status === "pending_superadmin_signature"
+                          ? "Awaiting Admin Signature"
+                          : contractor.status === "pending_signature"
+                          ? "Awaiting Contractor Signature"
                           : contractor.status.charAt(0).toUpperCase() +
                             contractor.status.slice(1).replace(/_/g, ' ')}
                       </span>
@@ -838,37 +845,80 @@ export default function ContractorsPage() {
                           <ArrowRight size={16} />
                         </button>
                       ) : contractor.status === "signed" ? (
-                        <button
-                          onClick={async () => {
-                            if (confirm(`Are you sure you want to activate ${contractor.name}?`)) {
-                              try {
-                                const token = localStorage.getItem("aventus-auth-token");
-                                const response = await fetch(
-                                  API_ENDPOINTS.contractorActivate(contractor.id),
-                                  {
-                                    method: "POST",
-                                    headers: {
-                                      "Authorization": `Bearer ${token}`,
-                                    },
+                        <div className="flex items-center gap-2 justify-center flex-wrap">
+                          <a
+                            href={API_ENDPOINTS.contractorSignedContract(contractor.id) + `?token=${localStorage.getItem("aventus-auth-token")}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white btn-parallelogram transition-all text-sm font-medium flex items-center gap-2"
+                          >
+                            <Eye size={16} />
+                            View Contract
+                          </a>
+                          <button
+                            onClick={async () => {
+                              if (confirm(`Are you sure you want to activate ${contractor.name}?`)) {
+                                try {
+                                  const token = localStorage.getItem("aventus-auth-token");
+                                  const response = await fetch(
+                                    API_ENDPOINTS.contractorActivate(contractor.id),
+                                    {
+                                      method: "POST",
+                                      headers: {
+                                        "Authorization": `Bearer ${token}`,
+                                      },
+                                    }
+                                  );
+                                  if (response.ok) {
+                                    alert("Contractor activated successfully!");
+                                    setContractors(contractors.map(c =>
+                                      c.id === contractor.id ? { ...c, status: "active" } : c
+                                    ));
+                                  } else {
+                                    throw new Error("Failed to activate");
                                   }
-                                );
-                                if (response.ok) {
-                                  alert("Contractor activated successfully!");
-                                  setContractors(contractors.map(c =>
-                                    c.id === contractor.id ? { ...c, status: "active" } : c
-                                  ));
-                                } else {
-                                  throw new Error("Failed to activate");
+                                } catch (error: any) {
+                                  alert(`Failed to activate contractor: ${error.message}`);
                                 }
-                              } catch (error: any) {
-                                alert(`Failed to activate contractor: ${error.message}`);
                               }
-                            }
-                          }}
-                          className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white btn-parallelogram transition-all text-sm font-medium"
-                        >
-                          Activate
-                        </button>
+                            }}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white btn-parallelogram transition-all text-sm font-medium"
+                          >
+                            Activate
+                          </button>
+                          {user?.role === "superadmin" && (
+                            <button
+                              onClick={async () => {
+                                if (confirm(`⚠️ RESET FOR TESTING\n\nThis will reset ${contractor.name}'s status back to "Pending Admin Signature" so you can test the signing workflow again.\n\nThis will clear the superadmin signature.\n\nContinue?`)) {
+                                  try {
+                                    const token = localStorage.getItem("aventus-auth-token");
+                                    const response = await fetch(
+                                      API_ENDPOINTS.resetToPendingSignature(contractor.id),
+                                      {
+                                        method: "POST",
+                                        headers: {
+                                          "Authorization": `Bearer ${token}`,
+                                        },
+                                      }
+                                    );
+                                    if (response.ok) {
+                                      alert("Contractor reset to pending signature!");
+                                      window.location.reload();
+                                    } else {
+                                      throw new Error("Failed to reset");
+                                    }
+                                  } catch (error: any) {
+                                    alert(`Failed to reset contractor: ${error.message}`);
+                                  }
+                                }
+                              }}
+                              className="px-4 py-2 bg-yellow-600 hover:bg-yellow-700 text-white btn-parallelogram transition-all text-sm font-medium"
+                              title="Reset to test signing workflow"
+                            >
+                              Reset for Testing
+                            </button>
+                          )}
+                        </div>
                       ) : (
                         <button
                           onClick={() => router.push(`/dashboard/contractors/${contractor.id}`)}

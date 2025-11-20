@@ -81,6 +81,7 @@ export const API_ENDPOINTS = {
 
   // Superadmin contract signing
   superadminSignContract: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/superadmin-sign-contract`,
+  resetToPendingSignature: (id: string) => `${getApiUrl()}/api/v1/contractors/${id}/reset-to-pending-signature`,
 
   // Superadmin Contracts
   get myContracts() { return `${getApiUrl()}/api/v1/auth/my-contracts`; },
