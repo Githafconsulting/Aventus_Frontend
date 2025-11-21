@@ -472,14 +472,6 @@ Aventus Resources`);
         /* Third Party Email Form */
         <div className="max-w-2xl mx-auto">
           <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} card-parallelogram shadow-lg overflow-hidden`}>
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] px-6 py-4">
-              <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                <Mail size={24} />
-                Request Quote from Third Party
-              </h2>
-            </div>
-
             <form onSubmit={handleSendThirdPartyRequest} className="p-6 space-y-5">
               {/* Select Third Party */}
               <div>
