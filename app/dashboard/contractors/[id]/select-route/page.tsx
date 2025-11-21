@@ -356,6 +356,7 @@ Aventus Resources`);
               setSelectedRoute(null);
               setSelectedSubRoute(null);
               setSelectedThirdParty("");
+              setThirdPartyEmail("");
               setEmailSubject("");
               setEmailBody("");
             } else {
@@ -571,6 +572,7 @@ Aventus Resources`);
                     setShowThirdPartyForm(false);
                     setSelectedRoute(null);
                     setSelectedThirdParty("");
+                    setThirdPartyEmail("");
                     setEmailSubject("");
                     setEmailBody("");
                   }}
