@@ -496,10 +496,19 @@ Aventus Resources`);
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
                   } focus:ring-2 focus:ring-[#FF6B00] focus:border-transparent`}
+                  style={{
+                    colorScheme: theme === "dark" ? "dark" : "light"
+                  }}
                 >
-                  <option value="">Select a company...</option>
+                  <option value="" className={theme === "dark" ? "bg-gray-800 text-gray-400" : "bg-white text-gray-600"}>
+                    Select a company...
+                  </option>
                   {thirdParties.map((tp) => (
-                    <option key={tp.id} value={tp.id}>
+                    <option
+                      key={tp.id}
+                      value={tp.id}
+                      className={theme === "dark" ? "bg-gray-800 text-white" : "bg-white text-gray-900"}
+                    >
                       {tp.company_name}
                     </option>
                   ))}
