@@ -611,7 +611,7 @@ export default function AdminsPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className={`divide-y ${theme === "dark" ? "divide-gray-800" : "divide-gray-200"}`}>
                 {filteredUsers.map((user) => (
                   <tr
                     key={user.id}
