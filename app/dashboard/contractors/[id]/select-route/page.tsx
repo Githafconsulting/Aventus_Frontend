@@ -6,7 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { API_ENDPOINTS } from "@/lib/config";
-import { ArrowLeft, Building2, Users, FileText, Mail, Send, Globe, MapPin, Briefcase, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Building2, Users, FileText, Mail, Send, Globe, MapPin, Briefcase, CheckCircle2, CheckCircle } from "lucide-react";
 
 interface ThirdParty {
   id: string;
@@ -36,6 +36,7 @@ export default function SelectRoutePage() {
   // Third party form state
   const [thirdParties, setThirdParties] = useState<ThirdParty[]>([]);
   const [selectedThirdParty, setSelectedThirdParty] = useState<string>("");
+  const [thirdPartyEmail, setThirdPartyEmail] = useState("");
   const [emailSubject, setEmailSubject] = useState("");
   const [emailBody, setEmailBody] = useState("");
 
@@ -59,11 +60,14 @@ export default function SelectRoutePage() {
     }
   };
 
-  // Auto-populate email when third party is selected
+  // Auto-populate email and body when third party is selected
   useEffect(() => {
     if (selectedThirdParty && thirdParties.length > 0 && contractor) {
       const thirdParty = thirdParties.find(tp => tp.id === selectedThirdParty);
       if (thirdParty) {
+        // Auto-populate third party email
+        setThirdPartyEmail(thirdParty.contact_person_email);
+
         // Update email body with third party contact info
         setEmailBody(`Dear ${thirdParty.contact_person_name},
 
@@ -73,14 +77,15 @@ Name: ${contractor.first_name} ${contractor.surname}
 Email: ${contractor.email}
 Nationality: ${contractor.nationality || "N/A"}
 
-Please send your quote to: ${thirdParty.contact_person_email}
-
 Please provide us with your rates, terms, and any applicable fees.
 
 Best regards,
 ${user?.name}
 Aventus Resources`);
       }
+    } else {
+      // Clear email when no third party selected
+      setThirdPartyEmail("");
     }
   }, [selectedThirdParty, thirdParties, contractor, user]);
 
@@ -492,6 +497,30 @@ Aventus Resources`);
                 {thirdParties.length === 0 && (
                   <p className="text-sm text-yellow-500 mt-2">
                     No third party companies available. Please add one first.
+                  </p>
+                )}
+              </div>
+
+              {/* Third Party Email (Auto-populated) */}
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${theme === "dark" ? "text-gray-200" : "text-gray-700"}`}>
+                  Third Party Email <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="email"
+                  value={thirdPartyEmail}
+                  readOnly
+                  placeholder="Select a company to auto-fill email..."
+                  className={`w-full px-4 py-2.5 rounded-lg border transition-all outline-none ${
+                    theme === "dark"
+                      ? "bg-gray-800 border-gray-700 text-gray-400"
+                      : "bg-gray-100 border-gray-300 text-gray-600"
+                  } cursor-not-allowed`}
+                />
+                {thirdPartyEmail && (
+                  <p className="text-sm text-green-500 mt-1 flex items-center gap-1">
+                    <CheckCircle size={14} />
+                    Email auto-populated from selected company
                   </p>
                 )}
               </div>
