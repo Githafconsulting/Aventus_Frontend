@@ -110,13 +110,22 @@ Aventus Resources`);
   const fetchThirdParties = async () => {
     try {
       const token = localStorage.getItem("aventus-auth-token");
-      const response = await fetch(`${API_ENDPOINTS.thirdParties}?include_inactive=false`, {
+      const url = `${API_ENDPOINTS.thirdParties}?include_inactive=false`;
+      console.log("Fetching third parties from:", url);
+
+      const response = await fetch(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
+      console.log("Third parties response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log("Third parties fetched:", data);
         setThirdParties(data);
+      } else {
+        const errorText = await response.text();
+        console.error("Third parties fetch failed:", response.status, errorText);
       }
     } catch (error) {
       console.error("Error fetching third parties:", error);
