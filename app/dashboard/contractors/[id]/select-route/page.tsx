@@ -139,9 +139,16 @@ Aventus Resources`);
     if (route === "SAUDI") {
       router.push(`/dashboard/contractors/${contractorId}/quote-sheets`);
     } else {
-      // All other routes (WPS, FREELANCER, OFFSHORE, UAE) go to CDS form WITHOUT saving yet
-      // Route will be saved when CDS form is submitted
-      router.push(`/dashboard/contractors/complete-cds/${contractorId}?route=${route.toLowerCase()}`);
+      // Check if route has sub-options (like UAE)
+      const routeConfig = routeOptions.find(r => r.type === route);
+      if (routeConfig?.hasSubOptions) {
+        // Show sub-route selection (DIRECT vs THIRD_PARTY)
+        setShowSubRouteSelection(true);
+      } else {
+        // WPS, FREELANCER, OFFSHORE go directly to CDS form WITHOUT saving yet
+        // Route will be saved when CDS form is submitted
+        router.push(`/dashboard/contractors/complete-cds/${contractorId}?route=${route.toLowerCase()}`);
+      }
     }
   };
 
