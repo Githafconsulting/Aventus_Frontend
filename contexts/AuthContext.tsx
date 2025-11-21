@@ -12,6 +12,7 @@ interface User {
   email: string;
   role: UserRole;
   isFirstLogin?: boolean;
+  contractor_id?: string;
 }
 
 interface AuthContextType {
@@ -76,12 +77,44 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   useEffect(() => {
-    // Load user from localStorage on mount
-    const savedUser = localStorage.getItem("aventus-user");
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-  }, []);
+    // Load user from localStorage and validate token on mount
+    const validateSession = async () => {
+      const savedUser = localStorage.getItem("aventus-user");
+      const token = localStorage.getItem("aventus-auth-token");
+
+      if (savedUser && token) {
+        try {
+          // Validate token by calling /me endpoint
+          const response = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+            },
+          });
+
+          if (response.ok) {
+            // Token is valid, set user
+            setUser(JSON.parse(savedUser));
+          } else {
+            // Token is invalid/expired, clear session
+            console.log("Session expired, clearing auth data");
+            localStorage.removeItem("aventus-user");
+            localStorage.removeItem("aventus-auth-token");
+            setUser(null);
+            // Redirect to login if not already on login page
+            if (window.location.pathname !== "/" && !window.location.pathname.startsWith("/contract/") && !window.location.pathname.startsWith("/documents/")) {
+              router.push("/");
+            }
+          }
+        } catch (error) {
+          console.error("Session validation error:", error);
+          // On network error, keep user logged in to allow offline-ish behavior
+          setUser(JSON.parse(savedUser));
+        }
+      }
+    };
+
+    validateSession();
+  }, [router]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; isFirstLogin: boolean }> => {
     try {
@@ -136,6 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         email: userData.email,
         role: userData.role,
         isFirstLogin: userData.is_first_login,
+        contractor_id: userData.contractor_id,
       };
 
       setUser(user);
@@ -236,6 +270,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("aventus-user");
+    localStorage.removeItem("aventus-auth-token");
     router.push("/");
   };
 
