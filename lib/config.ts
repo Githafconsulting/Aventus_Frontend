@@ -63,8 +63,10 @@ export const API_ENDPOINTS = {
   contractPdf: (token: string) => `${getApiUrl()}/api/v1/contractors/token/${token}/pdf`,
   signContract: (token: string) => `${getApiUrl()}/api/v1/contractors/sign/${token}`,
 
-  // Admins
+  // Admins & Users
   get admins() { return `${getApiUrl()}/api/v1/auth/admins`; },
+  get users() { return `${getApiUrl()}/api/v1/auth/users`; },
+  userById: (id: string) => `${getApiUrl()}/api/v1/auth/users/${id}`,
 
   // Third Parties
   get thirdParties() { return `${getApiUrl()}/api/v1/third-parties/`; },

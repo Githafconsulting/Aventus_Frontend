@@ -20,6 +20,7 @@ import {
   Users,
   Building,
 } from "lucide-react";
+import { API_ENDPOINTS } from "@/lib/config";
 
 interface User {
   id: string;
@@ -106,7 +107,7 @@ export default function AdminsPage() {
         return;
       }
 
-      const response = await fetch("http://localhost:8000/api/v1/auth/users", {
+      const response = await fetch(API_ENDPOINTS.users, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -143,7 +144,7 @@ export default function AdminsPage() {
         return;
       }
 
-      const response = await fetch("http://localhost:8000/api/v1/auth/users", {
+      const response = await fetch(API_ENDPOINTS.users, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -203,7 +204,7 @@ export default function AdminsPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/auth/users/${editingUser.id}`, {
+      const response = await fetch(API_ENDPOINTS.userById(editingUser.id), {
         method: "PUT",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -246,7 +247,7 @@ export default function AdminsPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/auth/users/${userId}`, {
+      const response = await fetch(API_ENDPOINTS.userById(userId), {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,
