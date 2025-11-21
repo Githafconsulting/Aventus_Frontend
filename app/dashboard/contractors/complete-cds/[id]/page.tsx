@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ArrowLeft, User, Building, Briefcase, DollarSign, FileText, CreditCard } from "lucide-react";
@@ -11,7 +11,9 @@ export default function CompleteCDSPage() {
   const { theme } = useTheme();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const contractId = params.id as string;
+  const selectedRoute = searchParams.get('route'); // Get route from URL query
 
   const [activeSection, setActiveSection] = useState<"personal" | "management" | "placement" | "costs" | "client" | "payment" | "paydetails">("personal");
   const [loading, setLoading] = useState(true);
@@ -470,6 +472,21 @@ export default function CompleteCDSPage() {
         return;
       }
 
+      // First, save the route selection if we have one
+      if (selectedRoute) {
+        await fetch(`${API_ENDPOINTS.contractorById(contractId)}/select-route`, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            route: selectedRoute,
+            sub_route: "direct"
+          }),
+        });
+      }
+
       // Submit CDS form data to backend
       const response = await fetch(`http://localhost:8000/api/v1/contractors/${contractId}/cds-form`, {
         method: "PUT",
@@ -529,11 +546,11 @@ export default function CompleteCDSPage() {
       {/* Header */}
       <div className="mb-6">
         <button
-          onClick={() => router.push("/dashboard/contractors")}
+          onClick={() => router.push(`/dashboard/contractors/${contractId}/select-route`)}
           className="flex items-center gap-2 mb-4 text-gray-400 hover:text-gray-300 transition-all"
         >
           <ArrowLeft size={20} />
-          Back to Contractors
+          Back to Route Selection
         </button>
 
         <div>
@@ -1899,7 +1916,7 @@ export default function CompleteCDSPage() {
               if (currentIndex > 0) {
                 setActiveSection(sectionOrder[currentIndex - 1] as any);
               } else {
-                router.push("/dashboard/contractors");
+                router.push(`/dashboard/contractors/${contractId}/select-route`);
               }
             }}
             className={`px-6 py-3 rounded-lg font-medium transition-all ${

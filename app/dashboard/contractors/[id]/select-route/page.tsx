@@ -40,9 +40,49 @@ export default function SelectRoutePage() {
   const [emailBody, setEmailBody] = useState("");
 
   useEffect(() => {
+    clearPreviousRouteSelection(); // Clear any previous route so user can choose again
     fetchContractor();
     fetchThirdParties();
   }, [contractorId]);
+
+  // Clear any previously selected route so user can choose again
+  const clearPreviousRouteSelection = async () => {
+    try {
+      const token = localStorage.getItem("aventus-auth-token");
+      await fetch(`${API_ENDPOINTS.contractorById(contractorId)}/clear-route`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      console.log("Previous route selection cleared");
+    } catch (error) {
+      console.log("Note: Could not clear previous route (this is okay if none existed)");
+    }
+  };
+
+  // Auto-populate email when third party is selected
+  useEffect(() => {
+    if (selectedThirdParty && thirdParties.length > 0 && contractor) {
+      const thirdParty = thirdParties.find(tp => tp.id === selectedThirdParty);
+      if (thirdParty) {
+        // Update email body with third party contact info
+        setEmailBody(`Dear ${thirdParty.contact_person_name},
+
+We would like to request a quote for the following contractor:
+
+Name: ${contractor.first_name} ${contractor.surname}
+Email: ${contractor.email}
+Nationality: ${contractor.nationality || "N/A"}
+
+Please send your quote to: ${thirdParty.contact_person_email}
+
+Please provide us with your rates, terms, and any applicable fees.
+
+Best regards,
+${user?.name}
+Aventus Resources`);
+      }
+    }
+  }, [selectedThirdParty, thirdParties, contractor, user]);
 
   const fetchContractor = async () => {
     try {
@@ -80,8 +120,29 @@ export default function SelectRoutePage() {
 
   const handleRouteSelection = (route: RouteType) => {
     setSelectedRoute(route);
-    // All routes go directly without sub-options
-    submitRouteSelection(route, "DIRECT");
+
+    // SAUDI route shows third party form WITHOUT saving to database
+    if (route === "SAUDI") {
+      setShowThirdPartyForm(true);
+      setEmailSubject(`Quote Request for ${contractor?.first_name} ${contractor?.surname}`);
+      setEmailBody(`Dear Team,
+
+We would like to request a quote for the following contractor:
+
+Name: ${contractor?.first_name} ${contractor?.surname}
+Email: ${contractor?.email}
+Nationality: ${contractor?.nationality || "N/A"}
+
+Please provide us with your rates, terms, and any applicable fees.
+
+Best regards,
+${user?.name}
+Aventus Resources`);
+    } else {
+      // All other routes (WPS, FREELANCER, OFFSHORE, UAE) go to CDS form WITHOUT saving yet
+      // Route will be saved when CDS form is submitted
+      router.push(`/dashboard/contractors/complete-cds/${contractorId}?route=${route.toLowerCase()}`);
+    }
   };
 
   const handleSubRouteSelection = (subRoute: SubRouteType) => {
@@ -105,9 +166,9 @@ Best regards,
 ${user?.name}
 Aventus Resources`);
     } else {
-      // DIRECT route - submit and redirect
+      // DIRECT route (UAE) - go to CDS form WITHOUT saving yet
       if (selectedRoute) {
-        submitRouteSelection(selectedRoute, subRoute);
+        router.push(`/dashboard/contractors/complete-cds/${contractorId}?route=${selectedRoute.toLowerCase()}`);
       }
     }
   };
@@ -296,18 +357,35 @@ Aventus Resources`);
       {/* Header */}
       <div className="mb-8">
         <button
-          onClick={() => router.push("/dashboard/contractors")}
+          onClick={() => {
+            if (showThirdPartyForm || showSubRouteSelection) {
+              // If in third party form or sub-route selection, go back to main route selection
+              setShowThirdPartyForm(false);
+              setShowSubRouteSelection(false);
+              setSelectedRoute(null);
+              setSelectedSubRoute(null);
+              setSelectedThirdParty("");
+              setEmailSubject("");
+              setEmailBody("");
+            } else {
+              // If in main route selection, go back to contractors list
+              router.push("/dashboard/contractors");
+            }
+          }}
           className="flex items-center gap-2 text-gray-400 hover:text-white mb-4 transition-colors"
         >
           <ArrowLeft size={20} />
-          Back to Contractors
+          {showThirdPartyForm || showSubRouteSelection ? "Back to Select Route" : "Back to Contractors"}
         </button>
 
         <h1 className={`text-3xl font-bold ${theme === "dark" ? "text-white" : "text-gray-900"}`}>
-          Select Onboarding Route
+          {showThirdPartyForm ? "Request Quote from Third Party" : "Select Onboarding Route"}
         </h1>
         <p className="text-gray-400 mt-2">
-          Choose the onboarding route for {contractor?.first_name} {contractor?.surname}
+          {showThirdPartyForm
+            ? `Requesting quote for ${contractor?.first_name} ${contractor?.surname}`
+            : `Choose the onboarding route for ${contractor?.first_name} ${contractor?.surname}`
+          }
         </p>
       </div>
 
@@ -412,7 +490,7 @@ Aventus Resources`);
                   value={selectedThirdParty}
                   onChange={(e) => setSelectedThirdParty(e.target.value)}
                   required
-                  className={`w-full px-4 py-2.5 input-parallelogram border transition-all outline-none ${
+                  className={`w-full px-4 py-2.5 rounded-lg border transition-all outline-none ${
                     theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
@@ -425,6 +503,11 @@ Aventus Resources`);
                     </option>
                   ))}
                 </select>
+                {thirdParties.length === 0 && (
+                  <p className="text-sm text-yellow-500 mt-2">
+                    No third party companies available. Please add one first.
+                  </p>
+                )}
               </div>
 
               {/* Email Subject */}
@@ -437,7 +520,7 @@ Aventus Resources`);
                   value={emailSubject}
                   onChange={(e) => setEmailSubject(e.target.value)}
                   required
-                  className={`w-full px-4 py-2.5 input-parallelogram border transition-all outline-none ${
+                  className={`w-full px-4 py-2.5 rounded-lg border transition-all outline-none ${
                     theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white"
                       : "bg-white border-gray-300 text-gray-900"
@@ -455,8 +538,8 @@ Aventus Resources`);
                   onChange={(e) => setEmailBody(e.target.value)}
                   required
                   rows={10}
-                  placeholder="Enter your message here..."
-                  className={`w-full px-4 py-2.5 input-parallelogram border transition-all outline-none resize-none ${
+                  placeholder="Select a third party company to auto-populate..."
+                  className={`w-full px-4 py-2.5 rounded-lg border transition-all outline-none resize-none ${
                     theme === "dark"
                       ? "bg-gray-800 border-gray-700 text-white placeholder-gray-500"
                       : "bg-white border-gray-300 text-gray-900 placeholder-gray-400"
@@ -469,8 +552,12 @@ Aventus Resources`);
                 <button
                   type="button"
                   onClick={() => {
+                    // Reset all states to go back to route selection WITHOUT saving
                     setShowThirdPartyForm(false);
                     setSelectedRoute(null);
+                    setSelectedThirdParty("");
+                    setEmailSubject("");
+                    setEmailBody("");
                   }}
                   disabled={submitting}
                   className={`px-6 py-2.5 btn-parallelogram font-medium transition-all ${
