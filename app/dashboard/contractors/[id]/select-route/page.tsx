@@ -121,23 +121,9 @@ Aventus Resources`);
   const handleRouteSelection = (route: RouteType) => {
     setSelectedRoute(route);
 
-    // SAUDI route shows third party form WITHOUT saving to database
+    // SAUDI route goes directly to quote sheets WITHOUT saving to database
     if (route === "SAUDI") {
-      setShowThirdPartyForm(true);
-      setEmailSubject(`Quote Request for ${contractor?.first_name} ${contractor?.surname}`);
-      setEmailBody(`Dear Team,
-
-We would like to request a quote for the following contractor:
-
-Name: ${contractor?.first_name} ${contractor?.surname}
-Email: ${contractor?.email}
-Nationality: ${contractor?.nationality || "N/A"}
-
-Please provide us with your rates, terms, and any applicable fees.
-
-Best regards,
-${user?.name}
-Aventus Resources`);
+      router.push(`/dashboard/contractors/${contractorId}/quote-sheets`);
     } else {
       // All other routes (WPS, FREELANCER, OFFSHORE, UAE) go to CDS form WITHOUT saving yet
       // Route will be saved when CDS form is submitted
@@ -472,6 +458,14 @@ Aventus Resources`);
         /* Third Party Email Form */
         <div className="max-w-2xl mx-auto">
           <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} card-parallelogram shadow-lg overflow-hidden`}>
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#FF6B00] to-[#FF8C00] px-6 py-4">
+              <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                <Mail size={24} />
+                Request Quote from Third Party
+              </h2>
+            </div>
+
             <form onSubmit={handleSendThirdPartyRequest} className="p-6 space-y-5">
               {/* Select Third Party */}
               <div>
