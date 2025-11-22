@@ -6,6 +6,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ArrowLeft, Save, Eye, Maximize2, X } from "lucide-react";
 import Image from "next/image";
+import { getApiUrl } from "@/lib/config";
 
 export default function CreateContractorStep1() {
   const { theme } = useTheme();
@@ -78,7 +79,7 @@ export default function CreateContractorStep1() {
       }
 
       // Call backend API to create contractor
-      const response = await fetch("http://localhost:8000/api/v1/contractors/", {
+      const response = await fetch("${getApiUrl()}/api/v1/contractors/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

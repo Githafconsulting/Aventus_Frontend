@@ -11,6 +11,7 @@ import {
   Edit2,
   FileDown,
 } from "lucide-react";
+import { getApiUrl } from "@/lib/config";
 
 const TEMPLATE_TYPES = [
   { value: "contract", label: "Contract" },
@@ -61,7 +62,7 @@ export default function TemplateViewPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/templates/${templateId}`,
+        `${getApiUrl()}/api/v1/templates/${templateId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -115,7 +116,7 @@ export default function TemplateViewPage() {
       };
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/templates/${templateId}`,
+        `${getApiUrl()}/api/v1/templates/${templateId}`,
         {
           method: "PUT",
           headers: {

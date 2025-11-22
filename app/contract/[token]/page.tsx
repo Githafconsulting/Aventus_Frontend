@@ -6,6 +6,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import SignatureComponent from "@/components/SignatureComponent";
 import { populateContractTemplate } from "@/types/contractTemplate";
 import { CheckCircle, AlertCircle, FileText, Scroll } from "lucide-react";
+import { getApiUrl } from "@/lib/config";
 
 export default function ContractPreviewPage() {
   const params = useParams();
@@ -26,7 +27,7 @@ export default function ContractPreviewPage() {
       try {
         // Fetch from backend API using new contracts endpoint
         const response = await fetch(
-          `http://localhost:8000/api/v1/contracts/token/${token}`
+          `${getApiUrl()}/api/v1/contracts/token/${token}`
         );
 
         if (!response.ok) {
@@ -80,7 +81,7 @@ export default function ContractPreviewPage() {
 
       // Submit signature to backend using new contracts endpoint
       const response = await fetch(
-        `http://localhost:8000/api/v1/contracts/token/${token}/sign`,
+        `${getApiUrl()}/api/v1/contracts/token/${token}/sign`,
         {
           method: "POST",
           headers: {
@@ -287,7 +288,7 @@ export default function ContractPreviewPage() {
           <>
             <div className={`${theme === "dark" ? "bg-gray-900" : "bg-white"} rounded-lg p-4 mb-6 shadow-lg`}>
               <iframe
-                src={`http://localhost:8000/api/v1/contracts/token/${token}/pdf`}
+                src={`${getApiUrl()}/api/v1/contracts/token/${token}/pdf`}
                 className="w-full h-[900px] rounded-lg border-2 border-gray-200"
                 title="Employment Contract PDF"
               />

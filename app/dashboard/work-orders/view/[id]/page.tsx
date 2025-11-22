@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
+import { getApiUrl } from "@/lib/config";
 import {
   ArrowLeft,
   FileText,
@@ -68,7 +69,7 @@ export default function ViewWorkOrderPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/work-orders/${workOrderId}`,
+        `${getApiUrl()}/api/v1/work-orders/${workOrderId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

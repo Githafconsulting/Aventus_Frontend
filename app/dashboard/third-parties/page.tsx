@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { API_ENDPOINTS } from "@/lib/config";
+import { API_ENDPOINTS, getApiUrl } from "@/lib/config";
 import {
   Search,
   Plus,
@@ -113,7 +113,7 @@ export default function ThirdPartiesPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/third-parties/${id}`, {
+      const response = await fetch(`${getApiUrl()}/api/v1/third-parties/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

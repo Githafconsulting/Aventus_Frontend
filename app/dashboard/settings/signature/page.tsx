@@ -12,6 +12,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
+import { getApiUrl } from "@/lib/config";
 
 export default function SignatureManagementPage() {
   const [loading, setLoading] = useState(true);
@@ -35,7 +36,7 @@ export default function SignatureManagementPage() {
     try {
       const token = localStorage.getItem("aventus-auth-token");
       const response = await fetch(
-        "http://localhost:8000/api/v1/contractors/superadmin/signature",
+        "${getApiUrl()}/api/v1/contractors/superadmin/signature",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -158,7 +159,7 @@ export default function SignatureManagementPage() {
 
       const token = localStorage.getItem("aventus-auth-token");
       const response = await fetch(
-        "http://localhost:8000/api/v1/contractors/superadmin/signature",
+        "${getApiUrl()}/api/v1/contractors/superadmin/signature",
         {
           method: "PUT",
           headers: {

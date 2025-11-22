@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { FileCheck, CheckCircle, Loader2, Eye, UserCheck } from "lucide-react";
+import { getApiUrl } from "@/lib/config";
 
 export default function PendingContractsPage() {
   const { theme } = useTheme();
@@ -24,7 +25,7 @@ export default function PendingContractsPage() {
   const fetchPendingContracts = async () => {
     try {
       setLoading(true);
-      const response = await fetch("http://localhost:8000/api/v1/contracts/pending");
+      const response = await fetch("${getApiUrl()}/api/v1/contracts/pending");
       if (!response.ok) throw new Error("Failed to fetch contracts");
 
       const data = await response.json();
@@ -39,7 +40,7 @@ export default function PendingContractsPage() {
 
   const viewContractDetails = async (contractId: number) => {
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/contracts/${contractId}`);
+      const response = await fetch(`${getApiUrl()}/api/v1/contracts/${contractId}`);
       if (!response.ok) throw new Error("Failed to fetch contract details");
 
       const data = await response.json();
@@ -56,7 +57,7 @@ export default function PendingContractsPage() {
 
     setValidating(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/contracts/${selectedContract.id}/validate`, {
+      const response = await fetch(`${getApiUrl()}/api/v1/contracts/${selectedContract.id}/validate`, {
         method: "POST",
       });
 
@@ -78,7 +79,7 @@ export default function PendingContractsPage() {
 
     setActivating(true);
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/contracts/${selectedContract.id}/activate`, {
+      const response = await fetch(`${getApiUrl()}/api/v1/contracts/${selectedContract.id}/activate`, {
         method: "POST",
       });
 
@@ -366,7 +367,7 @@ export default function PendingContractsPage() {
                         await handleValidate();
                         if (!validating) {
                           // Refresh contract details
-                          const response = await fetch(`http://localhost:8000/api/v1/contracts/${selectedContract.id}`);
+                          const response = await fetch(`${getApiUrl()}/api/v1/contracts/${selectedContract.id}`);
                           const updatedContract = await response.json();
                           setSelectedContract(updatedContract);
                         }

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/lib/config";
 import {
   Search,
   Plus,
@@ -76,7 +77,7 @@ export default function TemplatesPage() {
       }
 
       const response = await fetch(
-        "http://localhost:8000/api/v1/templates?include_inactive=true",
+        "${getApiUrl()}/api/v1/templates?include_inactive=true",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -112,7 +113,7 @@ export default function TemplatesPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/templates/${id}`,
+        `${getApiUrl()}/api/v1/templates/${id}`,
         {
           method: "DELETE",
           headers: {
@@ -142,7 +143,7 @@ export default function TemplatesPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/templates/${id}/duplicate`,
+        `${getApiUrl()}/api/v1/templates/${id}/duplicate`,
         {
           method: "POST",
           headers: {
@@ -183,7 +184,7 @@ export default function TemplatesPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/templates/${expandedTemplate.id}`,
+        `${getApiUrl()}/api/v1/templates/${expandedTemplate.id}`,
         {
           method: "PUT",
           headers: {

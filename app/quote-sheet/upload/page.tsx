@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
+import { getApiUrl } from "@/lib/config";
 
 export default function QuoteSheetUploadPage() {
   const searchParams = useSearchParams();
@@ -33,7 +34,7 @@ export default function QuoteSheetUploadPage() {
   const fetchQuoteSheetInfo = async () => {
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/quote-sheets/public/${token}`
+        `${getApiUrl()}/api/v1/quote-sheets/public/${token}`
       );
 
       if (!response.ok) {
@@ -76,7 +77,7 @@ export default function QuoteSheetUploadPage() {
       if (notes) formData.append("notes", notes);
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/quote-sheets/upload/${token}`,
+        `${getApiUrl()}/api/v1/quote-sheets/upload/${token}`,
         {
           method: "POST",
           body: formData,

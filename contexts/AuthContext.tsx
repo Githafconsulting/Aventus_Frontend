@@ -1,8 +1,11 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { API_ENDPOINTS, getApiUrl } from "@/lib/config";
+
+// Token refresh interval (7 hours in milliseconds) - token valid for 8 hours
+const TOKEN_REFRESH_INTERVAL = 7 * 60 * 60 * 1000;
 
 type UserRole = "superadmin" | "admin" | "consultant" | "client" | "contractor";
 
@@ -75,6 +78,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [tempPassword, setTempPassword] = useState<string | null>(null);
   const router = useRouter();
+  const refreshIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Silent token refresh function
+  const refreshToken = useCallback(async () => {
+    const token = localStorage.getItem("aventus-auth-token");
+    if (!token) return false;
+
+    try {
+      const response = await fetch(`${getApiUrl()}/api/v1/auth/refresh`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        localStorage.setItem("aventus-auth-token", data.access_token);
+        console.log("Token refreshed successfully");
+        return true;
+      } else {
+        console.log("Token refresh failed, session may have expired");
+        return false;
+      }
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      return false;
+    }
+  }, []);
+
+  // Start periodic token refresh
+  const startTokenRefresh = useCallback(() => {
+    // Clear any existing interval
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+    }
+
+    // Set up periodic refresh
+    refreshIntervalRef.current = setInterval(async () => {
+      const success = await refreshToken();
+      if (!success) {
+        // If refresh fails, stop the interval and let user know
+        if (refreshIntervalRef.current) {
+          clearInterval(refreshIntervalRef.current);
+        }
+      }
+    }, TOKEN_REFRESH_INTERVAL);
+  }, [refreshToken]);
+
+  // Stop token refresh
+  const stopTokenRefresh = useCallback(() => {
+    if (refreshIntervalRef.current) {
+      clearInterval(refreshIntervalRef.current);
+      refreshIntervalRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     // Load user from localStorage and validate token on mount
@@ -92,10 +151,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           });
 
           if (response.ok) {
-            // Token is valid, set user
+            // Token is valid, set user and start refresh cycle
             setUser(JSON.parse(savedUser));
+            startTokenRefresh();
           } else {
-            // Token is invalid/expired, clear session
+            // Token is invalid/expired, try to refresh it first
+            console.log("Token validation failed, attempting refresh...");
+            const refreshed = await refreshToken();
+
+            if (refreshed) {
+              // Refresh successful, validate again
+              const retryResponse = await fetch(`${getApiUrl()}/api/v1/auth/me`, {
+                headers: {
+                  "Authorization": `Bearer ${localStorage.getItem("aventus-auth-token")}`,
+                },
+              });
+
+              if (retryResponse.ok) {
+                setUser(JSON.parse(savedUser));
+                startTokenRefresh();
+                return;
+              }
+            }
+
+            // Refresh failed, clear session
             console.log("Session expired, clearing auth data");
             localStorage.removeItem("aventus-user");
             localStorage.removeItem("aventus-auth-token");
@@ -114,7 +193,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
 
     validateSession();
-  }, [router]);
+
+    // Cleanup on unmount
+    return () => {
+      stopTokenRefresh();
+    };
+  }, [router, refreshToken, startTokenRefresh, stopTokenRefresh]);
 
   const login = async (email: string, password: string): Promise<{ success: boolean; isFirstLogin: boolean }> => {
     try {
@@ -174,6 +258,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setUser(user);
       localStorage.setItem("aventus-user", JSON.stringify(user));
+
+      // Start token refresh cycle
+      startTokenRefresh();
 
       // Store temporary password if first login (needed for password reset)
       if (userData.is_first_login) {
@@ -268,6 +355,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
+    // Stop token refresh
+    stopTokenRefresh();
     setUser(null);
     localStorage.removeItem("aventus-user");
     localStorage.removeItem("aventus-auth-token");

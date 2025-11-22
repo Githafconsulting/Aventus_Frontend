@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/lib/config";
 import {
   Search,
   Plus,
@@ -55,7 +56,7 @@ export default function ProposalsPage() {
         return;
       }
 
-      const response = await fetch("http://localhost:8000/api/v1/proposals", {
+      const response = await fetch("${getApiUrl()}/api/v1/proposals", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -357,7 +358,7 @@ export default function ProposalsPage() {
                             onClick={async () => {
                               const token = localStorage.getItem("aventus-auth-token");
                               const response = await fetch(
-                                `http://localhost:8000/api/v1/proposals/${proposal.id}/send`,
+                                `${getApiUrl()}/api/v1/proposals/${proposal.id}/send`,
                                 {
                                   method: "POST",
                                   headers: { Authorization: `Bearer ${token}` },

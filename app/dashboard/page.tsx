@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
+import { getApiUrl } from "@/lib/config";
 import { API_ENDPOINTS } from "@/lib/config";
 
 export default function Dashboard() {
@@ -532,7 +533,7 @@ export default function Dashboard() {
           }
 
           // Fetch quote sheets
-          const quoteSheetsResponse = await fetch("http://localhost:8000/api/v1/quote-sheets", {
+          const quoteSheetsResponse = await fetch("${getApiUrl()}/api/v1/quote-sheets", {
             headers: { "Authorization": `Bearer ${token}` },
           });
 
@@ -542,7 +543,7 @@ export default function Dashboard() {
           }
 
           // Fetch proposals
-          const proposalsResponse = await fetch("http://localhost:8000/api/v1/proposals", {
+          const proposalsResponse = await fetch("${getApiUrl()}/api/v1/proposals", {
             headers: { "Authorization": `Bearer ${token}` },
           });
 

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { getApiUrl } from "@/lib/config";
 import {
   FileText,
   Download,
@@ -46,7 +47,7 @@ export default function DocumentsPage() {
       }
 
       // Fetch fresh user data from /me endpoint to get latest contractor_id
-      const userResponse = await fetch("http://localhost:8000/api/v1/auth/me", {
+      const userResponse = await fetch("${getApiUrl()}/api/v1/auth/me", {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -67,7 +68,7 @@ export default function DocumentsPage() {
       }
 
       const response = await fetch(
-        `http://localhost:8000/api/v1/contractors/${user.contractor_id}/documents`,
+        `${getApiUrl()}/api/v1/contractors/${user.contractor_id}/documents`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -102,7 +103,7 @@ export default function DocumentsPage() {
       } else if (documentUrl.startsWith("/api/")) {
         // API endpoint - fetch and open
         const token = localStorage.getItem("aventus-auth-token");
-        window.open(`http://localhost:8000${documentUrl}?token=${token}`, "_blank");
+        window.open(`${getApiUrl()}${documentUrl}?token=${token}`, "_blank");
       } else {
         window.open(documentUrl, "_blank");
       }
@@ -114,7 +115,7 @@ export default function DocumentsPage() {
       const link = document.createElement("a");
       if (documentUrl.startsWith("/api/")) {
         const token = localStorage.getItem("aventus-auth-token");
-        link.href = `http://localhost:8000${documentUrl}?token=${token}`;
+        link.href = `${getApiUrl()}${documentUrl}?token=${token}`;
       } else {
         link.href = documentUrl;
       }

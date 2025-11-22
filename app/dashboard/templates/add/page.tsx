@@ -10,6 +10,7 @@ import {
   Check,
   AlertCircle,
 } from "lucide-react";
+import { getApiUrl } from "@/lib/config";
 
 const TEMPLATE_TYPES = [
   { value: "contract", label: "Contract" },
@@ -63,7 +64,7 @@ export default function AddTemplatePage() {
         is_active: formData.is_active,
       };
 
-      const response = await fetch("http://localhost:8000/api/v1/templates/", {
+      const response = await fetch("${getApiUrl()}/api/v1/templates/", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useTheme } from "@/contexts/ThemeContext";
 import SignatureComponent from "@/components/SignatureComponent";
 import { CheckCircle, AlertCircle, Scroll } from "lucide-react";
+import { getApiUrl } from "@/lib/config";
 
 export default function ContractSignPage() {
   const router = useRouter();
@@ -29,7 +30,7 @@ export default function ContractSignPage() {
       }
 
       try {
-        const response = await fetch(`http://localhost:8000/api/v1/contractors/token/${token}`);
+        const response = await fetch(`${getApiUrl()}/api/v1/contractors/token/${token}`);
 
         if (!response.ok) {
           const errorData = await response.json();
@@ -43,7 +44,7 @@ export default function ContractSignPage() {
         setContractData(data);
 
         // Set PDF URL
-        setPdfUrl(`http://localhost:8000/api/v1/contractors/token/${token}/pdf`);
+        setPdfUrl(`${getApiUrl()}/api/v1/contractors/token/${token}/pdf`);
 
         setLoading(false);
       } catch (err) {
@@ -60,7 +61,7 @@ export default function ContractSignPage() {
     console.log("Signature submitted:", signature);
 
     try {
-      const response = await fetch(`http://localhost:8000/api/v1/contractors/sign/${token}`, {
+      const response = await fetch(`${getApiUrl()}/api/v1/contractors/sign/${token}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

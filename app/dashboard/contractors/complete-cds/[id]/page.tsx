@@ -5,7 +5,7 @@ import { useParams, useRouter, useSearchParams } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { ArrowLeft, User, Building, Briefcase, DollarSign, FileText, CreditCard } from "lucide-react";
-import { API_ENDPOINTS } from "@/lib/config";
+import { API_ENDPOINTS, getApiUrl } from "@/lib/config";
 
 export default function CompleteCDSPage() {
   const { theme } = useTheme();
@@ -137,7 +137,7 @@ export default function CompleteCDSPage() {
           return;
         }
 
-        const response = await fetch(`http://localhost:8000/api/v1/contractors/${contractId}`, {
+        const response = await fetch(`${getApiUrl()}/api/v1/contractors/${contractId}`, {
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -285,7 +285,7 @@ export default function CompleteCDSPage() {
         const token = localStorage.getItem("aventus-auth-token");
         if (!token) return;
 
-        const response = await fetch("http://localhost:8000/api/v1/third-parties/", {
+        const response = await fetch(`${getApiUrl()}/api/v1/third-parties/`, {
           headers: {
             "Authorization": `Bearer ${token}`,
           },
@@ -488,7 +488,7 @@ export default function CompleteCDSPage() {
       }
 
       // Submit CDS form data to backend
-      const response = await fetch(`http://localhost:8000/api/v1/contractors/${contractId}/cds-form`, {
+      const response = await fetch(`${getApiUrl()}/api/v1/contractors/${contractId}/cds-form`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,

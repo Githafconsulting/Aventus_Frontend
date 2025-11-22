@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/lib/config";
 import {
   Search,
   Plus,
@@ -55,7 +56,7 @@ export default function QuoteSheetsPage() {
         return;
       }
 
-      const response = await fetch("http://localhost:8000/api/v1/quote-sheets", {
+      const response = await fetch("${getApiUrl()}/api/v1/quote-sheets", {
         headers: {
           Authorization: `Bearer ${token}`,
         },

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/lib/config";
 import {
   Search,
   Plus,
@@ -68,7 +69,7 @@ export default function WorkOrdersPage() {
       }
 
       const response = await fetch(
-        "http://localhost:8000/api/v1/work-orders",
+        "${getApiUrl()}/api/v1/work-orders",
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -104,7 +105,7 @@ export default function WorkOrdersPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:8000/api/v1/work-orders/${id}`, {
+      const response = await fetch(`${getApiUrl()}/api/v1/work-orders/${id}`, {
         method: "DELETE",
         headers: {
           Authorization: `Bearer ${token}`,

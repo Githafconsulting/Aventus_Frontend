@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { getApiUrl } from "@/lib/config";
 import {
   ArrowLeft,
   FileText,
@@ -73,7 +74,7 @@ export default function AddWorkOrderPage() {
       const token = localStorage.getItem("aventus-auth-token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8000/api/v1/contractors", {
+      const response = await fetch("${getApiUrl()}/api/v1/contractors", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -91,7 +92,7 @@ export default function AddWorkOrderPage() {
       const token = localStorage.getItem("aventus-auth-token");
       if (!token) return;
 
-      const response = await fetch("http://localhost:8000/api/v1/third-parties", {
+      const response = await fetch("${getApiUrl()}/api/v1/third-parties", {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -158,7 +159,7 @@ export default function AddWorkOrderPage() {
       if (formData.notes) workOrderData.notes = formData.notes;
 
       // Create work order
-      const response = await fetch("http://localhost:8000/api/v1/work-orders", {
+      const response = await fetch("${getApiUrl()}/api/v1/work-orders", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -181,7 +182,7 @@ export default function AddWorkOrderPage() {
           formData.append("file", doc.file);
           formData.append("document_type", doc.type);
 
-          await fetch(`http://localhost:8000/api/v1/work-orders/${createdWorkOrder.id}/upload-document`, {
+          await fetch(`${getApiUrl()}/api/v1/work-orders/${createdWorkOrder.id}/upload-document`, {
             method: "POST",
             headers: {
               Authorization: `Bearer ${token}`,

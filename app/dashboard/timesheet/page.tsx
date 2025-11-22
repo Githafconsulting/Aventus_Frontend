@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTheme } from "@/contexts/ThemeContext";
+import { getApiUrl } from "@/lib/config";
 import {
   Clock,
   CheckCircle,
@@ -42,7 +43,7 @@ export default function ContractorTimesheetPage() {
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/timesheets/contractor/${contractorId}`
+        `${getApiUrl()}/api/v1/timesheets/contractor/${contractorId}`
       );
       const data = await response.json();
       setTimesheetsData(data);
@@ -84,7 +85,7 @@ export default function ContractorTimesheetPage() {
 
     const now = new Date();
     try {
-      const response = await fetch("http://localhost:8000/api/v1/timesheets/upload", {
+      const response = await fetch("${getApiUrl()}/api/v1/timesheets/upload", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
